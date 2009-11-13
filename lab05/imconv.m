@@ -149,6 +149,8 @@ end
 
 
 function J = RBG2HSV_MATLAB(I)
+	J = zeros(size(I,1),size(I,2));
+
 	R = I(:, :, 1);
 	G = I(:, :, 2);
 	B = I(:, :, 3);

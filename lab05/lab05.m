@@ -29,7 +29,7 @@ function lab05( input_args )
     heightArea = 20;
     
     
-    directory = 'data/';
+    directory = '../data/';
     images = dir(directory);
     images = images(3:end-1);
 
@@ -41,13 +41,23 @@ function lab05( input_args )
     RGB_player = imcrop(RGB_img,[280,250,5,30]);
     RGB_playerSize = size(RGB_player);
 %     figure;
-%     imshow(RGB_player);
-    
-    % get the histogram of the player
-    hist_player = histogram(RGB_player,bin);
 
+
+    % get the histogram of the player
+	RGB_player = imconv(im2double(RGB_player),1);
+	RGB_img = imconv(im2double(RGB_img),5);	
+	
+    imshow(RGB_img);
+
+	hist_player = histogram(RGB_player,bin)
+
+
+	
     % backproject player against histogram
     bp = backprojection(RGB_img,hist_player,bin);
+	
+
+	%{
     labels = labelimage(bp,3);
     
     boxes = cat(1,labels.BoundingBox);
@@ -67,6 +77,7 @@ function lab05( input_args )
     
     for i=1:size(images,1)
         img = imread([directory images(i).name]);
+% 		img = imconv(im2double(img),2);	
         position = FindBestFit(hist_player, ...
                                RGB_playerSize, img, ...
                                [position(1), position(2)],...
@@ -77,6 +88,7 @@ function lab05( input_args )
         M(i) = getframe;
     end
     movie(M,1,30);
+	%}
 end
 
 
@@ -94,6 +106,9 @@ function newPosition = FindBestFit(histObj, histObjSize, img,position, widthArea
     
     distVal = 100000;
 %     imResult=0;
+
+	%% looping over the area defined by a starting position is difficult to
+	%% improve.
     for i = startValX : sampleStep : endValX
         for j = startValY : sampleStep : endValY
             imPart = imcrop(img,[i,j,histObjSize(2),histObjSize(1)]);
