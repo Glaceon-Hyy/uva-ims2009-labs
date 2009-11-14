@@ -35,7 +35,7 @@ function lab05( input_args )
 
 
     RGB_img = imread([directory images(1).name]);
-% 	RGB_img = imconv(RGB_img,2);
+%     RGB_img = imconv(RGB_img,2);
 
     % take only part of the player to get a good histogram 
     RGB_player = imcrop(RGB_img,[280,250,5,30]);
@@ -43,13 +43,13 @@ function lab05( input_args )
 
 
     % get the histogram of the player
-% 	RGB_player = imconv(im2double(RGB_player),5);
-% 	RGB_img = imconv(im2double(RGB_img),5);	
-% 	figure;
-% 	imshow(RGB_player);
+	RGB_player = imconv(im2double(RGB_player),5);
+	RGB_img = imconv(im2double(RGB_img),5);	
+    figure;
+    imshow(RGB_player);
 	
-% 	figure;
-% 	imshow(RGB_img);
+    figure;
+    imshow(RGB_img);
 
 	hist_player = histogram(RGB_player,bin);
 
@@ -57,9 +57,10 @@ function lab05( input_args )
 	
     % backproject player against histogram
     bp = backprojection(RGB_img,hist_player,bin);
-% 	figure;
-% 	imshow(bp)
+	figure;
+	imshow(bp)
 
+	%{
     labels = labelimage(bp,3);
     
     boxes = cat(1,labels.BoundingBox);
@@ -90,7 +91,7 @@ function lab05( input_args )
         M(i) = getframe;
     end
     movie(M,1,30);
-
+	%}
 end
 
 
