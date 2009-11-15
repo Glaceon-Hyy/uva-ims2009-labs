@@ -31,7 +31,7 @@
 % 5 - needs mapping to 1-255 values to work, and mapped to 0-1 for display
 
 %% Main function
-function lab06( input_args )
+function lab06( colorspace )
     close all;
 
     bin = 20;
@@ -51,26 +51,33 @@ function lab06( input_args )
 	%% use RGB color space
     RGB_img = imread([directory images(1).name]);
     RGB_player = imcrop(RGB_img,[280,250,5,30]);
+	switch colorspace
+		case 0
+			%% do nothing
+		case 1
+			%% convert to normalized rgb
+			RGB_player = imconv(im2double(RGB_player),1)*255;
+			RGB_img = imconv(im2double(RGB_img),1)*255;	
+		case 2
+			%% convert to opponent color space
+			RGB_player = imconv(im2double(RGB_player),2)*255;
+			RGB_img = imconv(im2double(RGB_img),2)*255;	
+		case 3
+			%% convert to HSV color space (wikipedia)
+			RGB_player = imconv(im2double(RGB_player),3)*255;
+			RGB_img = imconv(im2double(RGB_img),3)*255;	
+		case 4
+			%% convert to HSI color space
+			RGB_player = imconv(im2double(RGB_player),4);
+			RGB_img = imconv(im2double(RGB_img),4);	
+		case 5
+			%% convert to HSV color space (matlab)
+			RGB_player = imconv(im2double(RGB_player),5)*255;
+			RGB_img = imconv(im2double(RGB_img),5)*255;	
+	end
 	
-	%% convert to normalized rgb
-% 	RGB_player = imconv(im2double(RGB_player),1)*255;
-% 	RGB_img = imconv(im2double(RGB_img),1)*255;	
-	
-	%% convert to opponent color space
-% 	RGB_player = imconv(im2double(RGB_player),2)*255;
-% 	RGB_img = imconv(im2double(RGB_img),2)*255;	
 
-	%% convert to HSV color space (wikipedia)
-% 	RGB_player = imconv(im2double(RGB_player),3)*255;
-% 	RGB_img = imconv(im2double(RGB_img),3)*255;	
 
-	%% convert to HSI color space
-% 	RGB_player = imconv(im2double(RGB_player),4);
-% 	RGB_img = imconv(im2double(RGB_img),4);	
-
-	%% convert to HSV color space (matlab)
-	RGB_player = imconv(im2double(RGB_player),5)*255;
-	RGB_img = imconv(im2double(RGB_img),5)*255;	
 
 	RGB_playerSize = size(RGB_player);
 	
@@ -87,14 +94,22 @@ function lab06( input_args )
 
 % 	min(bp(:))
 % 	max(bp(:))	
-	
-	figure;
-	imshow(RGB_player);
-	figure;
-	imshow(RGB_img);
-	figure;
-	imshow(bp)
 
+	if colorspace > 0
+		figure;
+		imshow(RGB_player/255);
+		figure;
+		imshow(RGB_img/255);
+		figure;
+		imshow(bp)
+	else
+		figure;
+		imshow(RGB_player);
+		figure;
+		imshow(RGB_img);
+		figure;
+		imshow(bp)
+	end
 	
 
     labels = labelimage(bp,3);
@@ -107,32 +122,45 @@ function lab06( input_args )
 	end
 	boxes = sortrows(boxes,5);
 
-	imshow(RGB_img);
-	imrect(gca,boxes(1,1:4));
+% 	figure;
+% 	imshow(RGB_img);
+% 	imrect(gca,boxes(1,1:4));
     
 	position = boxes(1,1:2);
 	boxsize = boxes(1,3:4);
     
+	figure;
+	
 	for i=1:size(images,1)
 		%% use RGB color space
 		img = imread([directory images(i).name]);
 
-		%% convert to normalized rgb		
-% 		img = imconv(im2double(img)	,1)*255;	
-
-		%% convert to opponent color space
-% 		img = imconv(im2double(img)	,2)*255;	
-
-		%% convert to HSV color space (wiki)
-% 		img = imconv(im2double(img)	,3)*255;	
-
-		%% convert to HSI color space
-% 		img = imconv(im2double(img)	,4)*255;	
-
-		%% convert to HSV color space (matlab)
-		img = imconv(im2double(img)	,5)*255;	
-		imshow(img/255,[]);
-
+		switch colorspace
+			case 0
+				%% do nothing
+			case 1
+				%% convert to normalized rgb		
+				img = imconv(im2double(img)	,1)*255;	
+			case 2
+				%% convert to opponent color space
+				img = imconv(im2double(img)	,2)*255;	
+			case 3
+				%% convert to HSV color space (wiki)
+				img = imconv(im2double(img)	,3)*255;	
+			case 4
+				%% convert to HSI color space
+				img = imconv(im2double(img)	,4)*255;	
+			case 5
+				%% convert to HSV color space (matlab)
+				img = imconv(im2double(img)	,5)*255;	
+		end
+		
+		if colorspace > 0
+			imshow(img/255,[]);
+		else
+			imshow(img,[]);
+		end
+		
 		position = FindBestFit(hist_player, ...
 								RGB_playerSize, img, ...
 								[position(1), position(2)],...
