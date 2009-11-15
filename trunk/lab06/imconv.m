@@ -57,6 +57,10 @@ function J = RGB2OCS(I)
 	J(:, :, 3) = IN;
 end
 
+%% RGB2OCS_KOEN
+% converts RGB to the Opponent Color Space using conversion steps as
+% described by Koen in the paper Evaluating Color Descriptors
+% - added normalization
 function J = RGB2OCS_KOEN(I)
 	R = I(:, :, 1);
 	G = I(:, :, 2);
@@ -65,6 +69,12 @@ function J = RGB2OCS_KOEN(I)
 	J(:, :, 1) = (R - G) / sqrt(2.0);
 	J(:, :, 2) = ((R + G) - (B * 2)) / sqrt(6.0);
 	J(:, :, 3) = (R + G + B) / sqrt(3.0);
+	
+	J = (J+abs(min(J(:))))/(max(J(:))+abs(min(J(:))));
+
+	
+% 	min(J(:))
+% 	max(J(:))
 end
 
 function J = RGB2HSI_THEO(I)
@@ -79,14 +89,20 @@ function J = RGB2HSI_THEO(I)
 
 	HU = atan((sqrt(3.0) * (G - B)) ./ ((R - G) + (R - B)));
 	SA = 1.0 - (3.0 * MinRGB);
-	IN = (R + G + B) * 0.333333;
-%%	IN = sum(I, 3) * 0.333333;
+	IN = (R + G + B) * (1/3);
+%	IN = sum(I, 3) * 0.333333;
 
 	HU = reshape(HU, D(1:2));
 	SA = reshape(SA, D(1:2));
 	IN = reshape(IN, D(1:2));
 
 	J = cat(3, HU, SA, IN);
+
+	J = (J+abs(min(J(:))))/(max(J(:))+abs(min(J(:))));
+
+	J(isnan(J)) = 0;
+% 	min(J(:))
+% 	max(J(:))	
 end
 
 
@@ -144,6 +160,11 @@ function J = RBG2HSV_WIKI(I)
 	V = reshape(V, D(1:2));
 
 	J = cat(3, H, S, V);
+	J(isnan(J)) = 0;
+	
+% 	min(J(:))
+% 	max(J(:))
+	
 end
 
 
