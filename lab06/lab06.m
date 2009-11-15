@@ -1,8 +1,9 @@
-%% Lab 5: Brute-force tracking
-% Tracking a given object given a predefined area to search. 
+% Lab 6: Kernel based histograms
+% Tracking a given object given a predefined area to search with kernel
+% based histograms
 
 
-%% Algorithm:
+%% Brute-force trakcing Algorithm:
 % width_area = v1
 % height_area = v2
 % hist_obj = histogram(object_to_track)
@@ -19,9 +20,18 @@
 %   plot(box(location))
 % end
 
+%% Color spaces
+% checking color-space methods:
+% 0 - RGB works fine
+% 1 - needs mapping to 1-255 values to work, and mapped to 0-1 for display
+% 2 - needs mapping to 1-255 values to work, and mapped to 0-1 for display
+% (added normalization in the function)
+% 3 - needs mapping to 1-255 values to work, and mapped to 0-1 for display
+% 4 - returns useless backprojection??
+% 5 - needs mapping to 1-255 values to work, and mapped to 0-1 for display
 
 %% Main function
-function lab05( input_args )
+function lab06( input_args )
     close all;
 
     bin = 20;
@@ -34,62 +44,105 @@ function lab05( input_args )
     images = images(3:end-1);
 
 
-    RGB_img = imread([directory images(1).name]);
-% 	RGB_img = imconv(RGB_img,2);
 
     % take only part of the player to get a good histogram 
+
+	
+	%% use RGB color space
+    RGB_img = imread([directory images(1).name]);
     RGB_player = imcrop(RGB_img,[280,250,5,30]);
-    RGB_playerSize = size(RGB_player);
+	
+	%% convert to normalized rgb
+% 	RGB_player = imconv(im2double(RGB_player),1)*255;
+% 	RGB_img = imconv(im2double(RGB_img),1)*255;	
+	
+	%% convert to opponent color space
+% 	RGB_player = imconv(im2double(RGB_player),2)*255;
+% 	RGB_img = imconv(im2double(RGB_img),2)*255;	
 
+	%% convert to HSV color space (wikipedia)
+% 	RGB_player = imconv(im2double(RGB_player),3)*255;
+% 	RGB_img = imconv(im2double(RGB_img),3)*255;	
 
+	%% convert to HSI color space
+% 	RGB_player = imconv(im2double(RGB_player),4);
+% 	RGB_img = imconv(im2double(RGB_img),4);	
+
+	%% convert to HSV color space (matlab)
+	RGB_player = imconv(im2double(RGB_player),5)*255;
+	RGB_img = imconv(im2double(RGB_img),5)*255;	
+
+	RGB_playerSize = size(RGB_player);
+	
+	min(RGB_img(:))
+	max(RGB_img(:))	
+
+	
     % get the histogram of the player
-% 	RGB_player = imconv(im2double(RGB_player),5);
-% 	RGB_img = imconv(im2double(RGB_img),5);	
-% 	figure;
-% 	imshow(RGB_player);
-	
-% 	figure;
-% 	imshow(RGB_img);
-
 	hist_player = histogram(RGB_player,bin);
+% 	sum(hist_player(:))
+	
+	% backproject player against histogram
+    bp = backprojection(RGB_img,hist_player,bin);
 
+% 	min(bp(:))
+% 	max(bp(:))	
+	
+	figure;
+	imshow(RGB_player);
+	figure;
+	imshow(RGB_img);
+	figure;
+	imshow(bp)
 
 	
-    % backproject player against histogram
-    bp = backprojection(RGB_img,hist_player,bin);
-% 	figure;
-% 	imshow(bp)
 
     labels = labelimage(bp,3);
-    
     boxes = cat(1,labels.BoundingBox);
 
-    for i=1:size(boxes,1)
-        imPart = imcrop(RGB_img,boxes(i,1:4));
-        imPartHist = histogram(imPart,bin);
-        boxes(i,5)=histdistance(hist_player,imPartHist,2);
-    end
-    boxes = sortrows(boxes,5);
+	for i=1:size(boxes,1)
+		imPart = imcrop(RGB_img,boxes(i,1:4));
+		imPartHist = histogram(imPart,bin);
+		boxes(i,5)=histdistance(hist_player,imPartHist,2);
+	end
+	boxes = sortrows(boxes,5);
 
-    imshow(RGB_img);
-    imrect(gca,boxes(1,1:4));
+	imshow(RGB_img);
+	imrect(gca,boxes(1,1:4));
     
-    position = boxes(1,1:2);
-    boxsize = boxes(1,3:4);
+	position = boxes(1,1:2);
+	boxsize = boxes(1,3:4);
     
-    for i=1:size(images,1)
-        img = imread([directory images(i).name]);
-% 		img = imconv(im2double(img),2);	
-        position = FindBestFit(hist_player, ...
-                               RGB_playerSize, img, ...
-                               [position(1), position(2)],...
-                               widthArea, heightArea, 5, bin);
+	for i=1:size(images,1)
+		%% use RGB color space
+		img = imread([directory images(i).name]);
+
+		%% convert to normalized rgb		
+% 		img = imconv(im2double(img)	,1)*255;	
+
+		%% convert to opponent color space
+% 		img = imconv(im2double(img)	,2)*255;	
+
+		%% convert to HSV color space (wiki)
+% 		img = imconv(im2double(img)	,3)*255;	
+
+		%% convert to HSI color space
+% 		img = imconv(im2double(img)	,4)*255;	
+
+		%% convert to HSV color space (matlab)
+		img = imconv(im2double(img)	,5)*255;	
+		imshow(img/255,[]);
+
+		position = FindBestFit(hist_player, ...
+								RGB_playerSize, img, ...
+								[position(1), position(2)],...
+								widthArea, heightArea, 5, bin);
         
-        imshow(img);
-        imrect(gca,[position(1) position(2) boxsize(1) boxsize(2)]);
-        M(i) = getframe;
-    end
-    movie(M,1,30);
+		imrect(gca,[position(1) position(2) boxsize(1) boxsize(2)]);
+		M(i) = getframe;
+		drawnow;
+	end
+% 	movie(M,1,30);
 
 end
 
@@ -129,40 +182,3 @@ function newPosition = FindBestFit(histObj, histObjSize, img,position, widthArea
 %     imshow(imResult);
 end
     
-    
-%     size(RGB_img)
-%     imshow(bp)
-
-    
-    
-%     for i=1:1size(images,1)
-%         img = imread([directory images(i).name]);
-%         imshow(img);
-%         M(i)=getframe;
-%     end
-%     
-%     movie(M,1,30);
-
-
-
-%     RGB_img1 = imread('nemo1.jpg');
-%     RGB_img2 = imread('nemo2.jpg');
-% 
-%     bin = 10;
-%     
-%     RGB_nemo = imcrop(RGB_img1,[260 130 30 30]);
-%     H = histogram(RGB_nemo,bin);
-%     B = backprojection(RGB_img2,H,bin);
-% 
-%     labels = labelimage(B);
-% 
-%     boxes = cat(1,labels.BoundingBox);
-% 
-%     for i=1:size(boxes,1)
-%         imPart = imcrop(RGB_img2,boxes(i,1:4));
-%         imPartHist = histogram(imPart,bin); 
-%         boxes(i,5)=histdistance(H,imPartHist,3);
-%     end
-%     boxes = sortrows(boxes,5);
-%     imshow(RGB_img2);
-%     imrect(gca,boxes(1,1:4));

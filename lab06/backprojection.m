@@ -1,9 +1,11 @@
 %% perform backprojection
 function B = backprojection(img,obj,bin)
-
+	%% initialize the backprojection image
     B = zeros(size(img,1),size(img,2));
+	
+	%% define binsize
     binsize = 256/bin;
-    img = img+1; %    
+    img = img+1;     
     bin1 = ceil(double(img(:,:,1))/binsize);
     bin2 = ceil(double(img(:,:,2))/binsize);
     bin3 = ceil(double(img(:,:,3))/binsize);
