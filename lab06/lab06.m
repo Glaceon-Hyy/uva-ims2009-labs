@@ -43,14 +43,23 @@ function lab06( colorspace )
     images = dir(directory);
     images = images(3:end-1);
 
-
-
-    % take only part of the player to get a good histogram 
-
 	
 	%% use RGB color space
     RGB_img = imread([directory images(1).name]);
-    RGB_player = imcrop(RGB_img,[280,250,5,30]);
+%     RGB_player = imcrop(RGB_img,[280,250,5,30]);
+
+	initPos = [275 240];
+	winSize = [21 51];
+
+	playerHist = KernelBasedHist(RGB_img, bin, initPos, winSize);
+	
+%    RGB_player = imcrop(RGB_img,[275 240 20 50]);
+
+	
+	% take only part of the player to get a good histogram 
+	
+	
+	
 	switch colorspace
 		case 0
 			%% do nothing
@@ -78,6 +87,7 @@ function lab06( colorspace )
 	
 
 
+	%{
 
 	RGB_playerSize = size(RGB_player);
 	
@@ -94,24 +104,17 @@ function lab06( colorspace )
 
 % 	min(bp(:))
 % 	max(bp(:))	
-
-	if colorspace > 0
-		figure;
-		imshow(RGB_player/255);
-		figure;
-		imshow(RGB_img/255);
-		figure;
-		imshow(bp)
-	else
-		figure;
-		imshow(RGB_player);
-		figure;
-		imshow(RGB_img);
-		figure;
-		imshow(bp)
+	if (0 == 1)
+		if colorspace > 0
+			figure; imshow(RGB_player/255);
+			figure; imshow(RGB_img/255);
+			figure; imshow(bp)
+		else
+			figure; imshow(RGB_player);
+			figure; imshow(RGB_img);
+			figure; imshow(bp)
+		end
 	end
-	
-
     labels = labelimage(bp,3);
     boxes = cat(1,labels.BoundingBox);
 
@@ -171,8 +174,110 @@ function lab06( colorspace )
 		drawnow;
 	end
 % 	movie(M,1,30);
-
+	%}
 end
+
+
+%% KernelBasedHist takes as input the target image, the number of bins for
+%% the histogram, a position to derive the histogram from, the size of the
+%% object to create a histogram from.
+function hist = KernelBasedHist(img, bin, pos, objSize)
+	hist = 0;
+	
+	%% get the object from the image at a given position (with a given
+	%% rectangle size)
+	objRectangle = imcrop(img,[pos(1), pos(2), objSize(1), objSize(2)]);
+	
+	%% create an elliptical mask
+	figure(1024); imshow(objRectangle);
+	objEllipse = imellipse(gca, [1, 1, objSize(1), objSize(2)]);
+    api = iptgetapi(objEllipse); 
+    vert = api.getVertices();	
+	close(1024);
+
+	[m,n,unused] = size(objRectangle);	
+    mask = poly2mask(vert(:,1),vert(:,2),m,n); 	
+    mask = repmat(mask,[1,1,3]);	
+    maskedObj = zeros(m,n,3,'uint8');
+    maskedObj(mask) = objRectangle(mask);
+	maskedObj(~mask) = NaN;
+	
+	%% normalize to a fixed size unit circle (choose some appropriate
+	%% length for the unit)
+	normHx = 51;
+	normHy = 51;
+	U = (normHx-1)/2;
+	V = (normHy-1)/2;
+	
+	maskedObj = imresize(maskedObj,[normHx, normHy]);
+	figure;
+    imshow(maskedObj);
+	
+	
+	%% Create a mask of the kernel. Origin is in the center during creation, 
+	%% and translated to image coordinates.
+	%% The mask will be used to directly assign weights to the pixels in
+	%% maskedObj when creating the histogram.
+	
+	[xF, yF] = meshgrid(1:1:normHx, 1:1:normHy);
+	u=1;
+	v=1;
+	maskKernel = zeros(normHx, normHy);
+	x=1:3;
+	for i=-U:1:U
+		for j=-V:1:V
+			x = normPos(i,j)/normHx;
+% 			if abs(x) <= 1
+% 				maskKernel(u,v) = 0.75*(1-x^2);
+% 			else
+% 				maskKernel(u,v) = 0;
+% 			end
+
+			maskKernel(u,v) = Ek(x^2);
+			v = v + 1;
+		end
+		v = 1;
+		u = u + 1;
+	end
+	figure;
+	mesh(xF,yF,maskKernel);
+end
+
+
+function n = normPos(u,v)
+	u = double(u);
+	v = double(v);
+	n = sqrt(u^2+v^2);
+end
+
+
+%% Epanechnikov Kernel: 
+%%   0.5 * c_d^(-1) * (d + 2) * (1 - |x|^2) if |x| =< 1,
+%%   0 otherwise.
+function y = Ek(x)
+	%% NOTE: returning value should be a scalar, but incoming value is a
+	%% triple? (RGB)
+
+
+	Cd = 2; % what value to assign?
+	d = 2; % given
+	Kx = 0.5*Cd^(-1)*(d + 2)*(1-abs(x)^2);
+	if x <= 1
+		y = Kx;
+	else
+		y = 0;
+	end
+end
+
+%% Kronecker Delta Function: KDf(x) = 1 if x=0, 0 otherwise
+function y = Kd(x)
+	if (x==1)
+		y=0;
+	else
+		y=1;
+	end
+end
+
 
 
 %% FindBestFit
