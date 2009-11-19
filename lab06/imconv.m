@@ -207,6 +207,6 @@ function J = RBG2HSV_MATLAB(I)
 	v = reshape(v, size(J));
 	J = cat(3, h, s, v);
 	J = (J+abs(min(J(:))))/(max(J(:))+abs(min(J(:))));
-	min(J(:))
-	max(J(:))
+% 	min(J(:))
+% 	max(J(:))
 end
