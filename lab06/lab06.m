@@ -2,7 +2,7 @@
 % Tracking a given object given a predefined area to search. 
 
 
-%% Algorithm:
+%% Brute Force Algorithm:
 % width_area = v1
 % height_area = v2
 % hist_obj = histogram(object_to_track)
@@ -18,6 +18,13 @@
 %   location = findBestFit(hist_obj,area,img_seq[i])
 %   plot(box(location))
 % end
+
+%% Color spaces
+% 1
+% 2
+% 3
+% 4
+% 5 - RBG2HSV_MATLAB, working but incorrect label-initialization
 
 
 %% Main function
@@ -49,10 +56,9 @@ function lab06( colorSpace )
 			img = imconv(img,4)*255; 
 		case 5
 			img = imconv(img,5)*255; 
+		case 6
+			img = imconv(img,6)*255; 
 	end	
-
-    % take only part of the player to get a good histogram 
-    RGB_player = imcrop(img,[280,250,5,30]);
 	
 % 	figure; imshow(img);
 
@@ -61,66 +67,45 @@ function lab06( colorSpace )
 	
 	normH = [21 21];
 	kernel = EpanechnikovKernel(normH(1), normH(2));
-	
-	TargetModel = KernelBasedHist(RGB_player, bin, ModelPos, ModelSize, kernel);
-	
-    % backproject player against histogram
-    bp = BackProjection(img, TargetModel, bin);
 
-	%% get labels 
-	labels = LabelImage(bp,3);
-	boxes = cat(1,labels.BoundingBox);
+	%% create the target model
+	TargetModel = KernelBasedHist(img, bin, ModelPos, ModelSize, kernel);
 
-	%% find starting position for tracking using labels
-	for i=1:size(boxes, 1)
-		CandidatePos = boxes(i,1:2);
-		CandidateSize = boxes(i, 3:4);
-		imPart = imcrop(img,boxes(i, 1:4));
-		TargetCandidateHist = KernelBasedHist(imPart, bin, ... 
-									CandidatePos, ...
-									CandidateSize, ...
-									kernel);
-		boxes(i,5) = HistDistance(TargetModel, TargetCandidateHist, 2);
-	end
-	
-    boxes = sortrows(boxes,5);
-    imshow(img);
-    imrect(gca,boxes(1,1:4));
-    
-    position = boxes(1,1:2);
-    boxsize = boxes(1,3:4);
-    
-    for i=1:size(images,1)
-        img = imread([directory images(i).name]);
+
+	position = ModelPos;
+
+	for i=1:size(images,1)
+		img = imread([directory images(i).name]);
 		switch colorSpace
 			case 0
 				%% keep RGB
 			case 1
 				%% normalized RGB
-				img = imconv(img,1)*255; 
+				img = imconv(img,1); 
 			case 2
 				img = imconv(img,2)*255; 
 			case 3
 				img = imconv(img,3)*255; 
 			case 4
-				img = imconv(img,4)*255; 
+				img = imconv(img,4); 
 			case 5
-				img = imconv(img,5)*255; 
+				img = imconv(img,5); 
+			case 6
+				img = imconv(img,6)*255; 
 		end	
         position = FindBestFit(TargetModel, ...
                                img, ...
                                position, ModelSize, ...
                                widthArea, heightArea, 5, bin, kernel);
 		if colorSpace > 0
-			imshow(img/255);
+			imshow(img, []);
 		else
 			imshow(img);
 		end
-        imrect(gca,[position(1) position(2) boxsize(1) boxsize(2)]);
-        M(i) = getframe;
-    end
-    movie(M,1,30);
-
+		imrect(gca,[position(1) position(2) ModelSize(1) ModelSize(2)]);
+		M(i) = getframe;
+	end
+	movie(M,1,30);
 end
 
 
@@ -141,9 +126,8 @@ function newPosition = FindBestFit(histObj, img, position, objSize, widthArea, h
 	%% improve.
 	for i = startValX : sampleStep : endValX
 		for j = startValY : sampleStep : endValY
-			imPart = imcrop(img,[i,j, objSize(2), objSize(1)]);
 			pos = [i, j];
-			imPartHist = KernelBasedHist(imPart, bin, pos, objSize, kernel);
+			imPartHist = KernelBasedHist(img, bin, pos, objSize, kernel);
 			temp = HistDistance(histObj,imPartHist,2);
 			if temp < distVal
 				distVal = temp;

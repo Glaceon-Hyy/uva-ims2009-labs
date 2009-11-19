@@ -4,6 +4,9 @@
 %% the kernel.
 function H = KernelBasedHist(img, bin, objPos, objSize, kernel)
 
+	img = imcrop(img,[objPos(1), objPos(2), objSize(1), objSize(2)]);
+
+
     % initialize the histogram
 	H = zeros(bin,bin,bin);
 	normHx = size(kernel,1);
@@ -13,16 +16,17 @@ function H = KernelBasedHist(img, bin, objPos, objSize, kernel)
 	binsize = 256/bin;
 
 	img = imresize(img,[normHx, normHy]);
-	img = img+1;
   
+
+	img = (img + abs(min(img(:)))) / (abs(min(img(:))) + max(img(:)));
+	img = img*255;
+	img = img+1;
+	
 	%% 
 	bin1 = ceil(double(img(:,:,1))/binsize);
 	bin2 = ceil(double(img(:,:,2))/binsize);
 	bin3 = ceil(double(img(:,:,3))/binsize);
 	
-% 	min(img(:))
-% 	max(img(:))
-
 	for i=1:size(img,1)
 		for j=1:size(img,2)
 			H(bin1(i,j),bin2(i,j),bin3(i,j)) = H(bin1(i,j),bin2(i,j),bin3(i,j)) + kernel(i,j);

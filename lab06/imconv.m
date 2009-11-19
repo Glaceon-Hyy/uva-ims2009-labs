@@ -1,8 +1,4 @@
 function out = imconv(I, method)
-% 	close all;
-% 	clear all;
-
-% 	I = im2double(imread('./data/nemo1.jpg'));
     out=0;
     switch method
         case 1
@@ -15,14 +11,10 @@ function out = imconv(I, method)
             out=RGB2HSI_THEO(I);
         case 5
             out=RBG2HSV_MATLAB(I);
+		case 6
+			out = RGB2OCS(I);
     end
 
-
-%     J = RBG2HSV_WIKI(I);
-% 	K = rgb2hsv(I);
-
-% 	figure(1); imshow(J);
-% 	figure(2); imshow(K);
 end
 
 
@@ -57,6 +49,7 @@ function J = RGB2OCS(I)
 	J(:, :, 1) = RG;
 	J(:, :, 2) = YB;
 	J(:, :, 3) = IN;
+	J = (J+abs(min(J(:))))/(max(J(:))+abs(min(J(:))));
 end
 
 %% RGB2OCS_KOEN
@@ -73,7 +66,8 @@ function J = RGB2OCS_KOEN(I)
 	J(:, :, 3) = (R + G + B) / sqrt(3.0);
 	
 	J = (J+abs(min(J(:))))/(max(J(:))+abs(min(J(:))));
-
+% 	min(J(:))
+% 	max(J(:))
 end
 
 function J = RGB2HSI_THEO(I)
@@ -213,4 +207,6 @@ function J = RBG2HSV_MATLAB(I)
 	v = reshape(v, size(J));
 	J = cat(3, h, s, v);
 	J = (J+abs(min(J(:))))/(max(J(:))+abs(min(J(:))));
+	min(J(:))
+	max(J(:))
 end
