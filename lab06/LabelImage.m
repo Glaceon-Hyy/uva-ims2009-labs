@@ -1,7 +1,7 @@
 %% labelimage
 % returns a struct containing several features extracted from the image
 % (Area, Centroid, BoundingBox)
-function labels = labelimage(img,disksize)
+function labels = LabelImage(img,disksize)
     disk = strel('disk',disksize);
     background = imopen(img,disk);
     img2 = imsubtract(img,background);    
