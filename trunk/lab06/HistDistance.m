@@ -1,6 +1,6 @@
 %% histdistance
 % calculate distance between 2 histograms
-function dist = histdistance(d1,d2,method)
+function dist = HistDistance(d1,d2,method)
     switch method
         % Euclidean distance
         case 1

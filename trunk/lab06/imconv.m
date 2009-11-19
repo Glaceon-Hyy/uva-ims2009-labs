@@ -27,6 +27,8 @@ end
 
 
 function J = RGB2rgb(I)
+	I = im2double(I);
+	
 	R = I(:, :, 1);
 	G = I(:, :, 2);
 	B = I(:, :, 3);
@@ -72,12 +74,10 @@ function J = RGB2OCS_KOEN(I)
 	
 	J = (J+abs(min(J(:))))/(max(J(:))+abs(min(J(:))));
 
-	
-% 	min(J(:))
-% 	max(J(:))
 end
 
 function J = RGB2HSI_THEO(I)
+	I = im2double(I);
 	D = size(I);
 	R = I(:, :, 1); R = R(:);
 	G = I(:, :, 2); G = G(:);
@@ -170,6 +170,7 @@ end
 
 
 function J = RBG2HSV_MATLAB(I)
+	I = im2double(I);
 	J = zeros(size(I,1),size(I,2));
 
 	R = I(:, :, 1);
@@ -211,4 +212,5 @@ function J = RBG2HSV_MATLAB(I)
 	s = reshape(s, size(J));
 	v = reshape(v, size(J));
 	J = cat(3, h, s, v);
+	J = (J+abs(min(J(:))))/(max(J(:))+abs(min(J(:))));
 end
