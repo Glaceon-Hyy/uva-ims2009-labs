@@ -31,7 +31,7 @@
 function lab06( colorSpace )
     close all;
 
-    bin = 20;
+    bin = 10;
     widthArea = 20;
     heightArea = 20;
     
@@ -60,10 +60,17 @@ function lab06( colorSpace )
 			img = imconv(img,6)*255; 
 	end	
 	
-% 	figure; imshow(img);
+	%% interactively select the target model
+ 	figure; imshow(img);
+	TargetObject = imrect(gca,[]);
+	api = iptgetapi(TargetObject);
 
-	ModelSize = [5 30];
-	ModelPos = [280 250];
+	ObjSpecs = api.getPosition();
+	
+	ModelSize = [ObjSpecs(3) ObjSpecs(4)];
+	ModelPos = [ObjSpecs(1) ObjSpecs(2)];
+	
+	
 	
 	normH = [21 21];
 	kernel = EpanechnikovKernel(normH(1), normH(2));
@@ -75,7 +82,9 @@ function lab06( colorSpace )
 	position = ModelPos;
 
 	for i=1:size(images,1)
+		tic;
 		img = imread([directory images(i).name]);
+		fprintf('Processing %s\n', [directory images(i).name]);
 		switch colorSpace
 			case 0
 				%% keep RGB
@@ -104,6 +113,7 @@ function lab06( colorSpace )
 		end
 		imrect(gca,[position(1) position(2) ModelSize(1) ModelSize(2)]);
 		M(i) = getframe;
+		toc;
 	end
 	movie(M,1,30);
 end
