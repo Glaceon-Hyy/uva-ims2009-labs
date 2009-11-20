@@ -1,18 +1,7 @@
-%% Lab 6: Brute-force tracking using Kernel Based Histograms
-% Tracking a given object given a predefined area to search. 
-
-
-
-%% Color spaces
-% 1
-% 2
-% 3
-% 4
-% 5 - RBG2HSV_MATLAB, working but incorrect label-initialization
-
+%% Lab 7: Mean-shift tracking using Kernel Based Histograms
 
 %% Main function
-function lab07(colorSpace, bin)
+function lab07(colorSpace, trackingType, bin)
     close all;
 
     widthArea = 20;
@@ -85,28 +74,32 @@ function lab07(colorSpace, bin)
 				img = imconv(img,5); 
 			case 6
 				img = imconv(img,6)*255; 
-		end	
-		%% perform brute force search
-        position = FindBestFit(TargetModel, ...
-                               img, ...
-                               position, ModelSize, ...
-                               widthArea, heightArea, 5, bin, kernel);
+		end
+		
+		%% display the image
 		if colorSpace > 0
 			imshow(img, []);
 		else
 			imshow(img);
 		end
-		imrect(gca,[position(1) position(2) ModelSize(1) ModelSize(2)]);
 		
-		%% perform mean shift search
-		position2 = MeanShift(TargetModel, ...
-							img, ... 
-							position2, ModelSize, ...
-							bin, kernel);
-		h = imrect(gca,[position2(1) position2(2) ModelSize(1) ModelSize(2)]);
-		api = iptgetapi(h);
-		api.setColor([1 0 0]);
-		
+		if trackingType == 1
+			%% perform brute force search
+			position = FindBestFit(TargetModel, ...
+								   img, ...
+								   position, ModelSize, ...
+								   widthArea, heightArea, 5, bin, kernel);
+			imrect(gca,[position(1) position(2) ModelSize(1) ModelSize(2)]);
+		else
+			%% perform mean shift search
+			position2 = MeanShift(TargetModel, ...
+								img, ... 
+								position2, ModelSize, ...
+								bin, kernel, 1);
+			h = imrect(gca,[position2(1) position2(2) ModelSize(1) ModelSize(2)]);
+			api = iptgetapi(h);
+			api.setColor([1 0 0]);
+		end
 		
 		M(i) = getframe;
 		toc;
@@ -117,65 +110,52 @@ end
 
 
 
-
-function newPosition = MeanShift(TargetModel, img, pos, objSize, bin, kernel)
-	newPosition = [1, 1];
-	y0 = pos;
-	
+%% MeanShift Algorithm
+function newPos = MeanShift(TargetModel, img, oldPos, objSize, bin, kernel, iter)
 	while 1
+		newPos = [0 0];
+		TargetCandidate = KernelBasedHist(img, bin, oldPos, objSize, kernel);
 
-		TargetCandidate = KernelBasedHist(img, bin, y0, objSize, kernel);
+		CombinedHist = sqrt( TargetModel ./ TargetCandidate );
+		CombinedHist(isnan(CombinedHist)) = 0;
+		CombinedHist(isinf(CombinedHist)) = 0;
+		imPart = imcrop(img, [oldPos objSize]);
+		weights = BackProjection(imPart, CombinedHist, bin);
+		center = [oldPos(1)+objSize(1)/2 oldPos(2)+objSize(2)/2];
 
-		w = TargetModel ./ TargetCandidate;
-		w(isnan(w)) = 0;
-		w = sqrt(w);
-		w(isinf(w)) = 0;
-		w = sum(w(:));
+		u=1;
+		v=1;
 
-		sumxw=0;
-		sumw=0;
-
-		for i=pos(1):pos(1)+objSize(1)
-			for j=pos(2):pos(2)+objSize(2)
-				x = [i, j];
-				xw = x*w;
-				sumxw = sumxw + xw;
-				sumw = sumw + w;
-
+		for i=oldPos(1): oldPos(1)+objSize(2)
+			for j=oldPos(2): oldPos(2)+objSize(1)
+				newPos = newPos + (weights(u,v)*[i-center(1) j-center(2)]);
+				v=v+1;
 			end
+			v=1;
+			u=u+1;
 		end
-		pos
-		y1 = sumxw/sumw
+
+		newPos = (newPos / sum(weights(:))) + oldPos;
 		
-		while HistDistance(TargetModel, KernelBasedHist(img, bin, y1, objSize, kernel), 4) < ...
-				HistDistance(TargetModel, TargetCandidate, 4)
-			y1 = 0.5*(y0+y1);
+		if sum(weights(:)) == 0
+			fprintf('zero!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
 		end
-		y = y1-y0;
-		normy = normPos(y(1),y(2))
-		if y < 0.5
-			newPosition = y1;
-			break
-		else 
-			y0 = y1;
-		end
-	end
-	
-end
 
-function b = Kn(n)
-	if n == 0
-		b = 1;
-	else 
-		b = 0;
+		NewPosTarget = KernelBasedHist(img, bin, newPos, objSize, kernel);
+
+		while HistDistance(TargetModel, NewPosTarget, 4) < HistDistance(TargetModel, TargetCandidate, 4)
+			newPos = 0.5 * (oldPos + newPos);
+			NewPosTarget = KernelBasedHist(img, bin, newPos, objSize, kernel);	
+		end
+
+		if sum(abs(newPos - oldPos)) < 0.01
+			break;
+		else
+			oldPos = newPos;
+		end
 	end
 end
 
-function n = normPos(u,v)
-	u = double(u);
-	v = double(v);
-	n = sqrt(u^2+v^2);
-end
 
 
 %% FindBestFit
