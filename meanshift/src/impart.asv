@@ -1,8 +1,0 @@
-function part = impart( img, size, center )
-%IMPART Summary of this function goes here
-%   Detailed explanation goes here
-
-
-	part = img([])
-
-end
