@@ -1,14 +1,16 @@
 %% Lab 7: Mean-shift tracking using Kernel Based Histograms
 
 %% Main function
-function main(colorSpace, trackingType, bin)
+function main(colorSpace, trackingType, bin, verbose)
     close all;
 
-    widthArea = 20;
-    heightArea = 20;
-    
-    directory = '../data/';
-    images = dir(directory);
+
+    widthArea = 20;						%%
+    heightArea = 20;					%%
+    directory = '../soccer/';		%% 
+
+	
+	images = dir(directory);
     images = images(3:end-1);
 
     img = imread([directory images(1).name]);
@@ -98,25 +100,27 @@ function main(colorSpace, trackingType, bin)
 			center = MeanShiftRec(TargetModel, ...
 								img, ... 
 								center, winSize, ...
-								bin, kernel, 1);
-% 			if colorSpace > 0
-% 				subplot(2,3,1); imshow(img, []);
-% 			else
-% 				subplot(2,3,1); imshow(img);
-% 			end
-
+								bin, kernel, 1, verbose);
 			path(i,:) = center;
 
 
 % 			subplot(2,3,1); 
-			hold on;
-			imshow(imgOriginal);
-			h = rectangle('Position', [center - winSize ModelSize]);
-			set(h, 'EdgeColor', [1 0 0]);
-			
-			plot(path(:,1),path(:,2),'g-');
-			
-			hold off;
+			if verbose
+				hold on;
+				subplot(1,3,1); imshow(imgOriginal);
+				h = rectangle('Position', [center - winSize ModelSize]);
+				set(h, 'EdgeColor', [1 0 0]);
+% 				plot(path(:,1),path(:,2),'g-');
+				hold off;
+			else
+				hold on;
+				imshow(imgOriginal);
+				h = rectangle('Position', [center - winSize ModelSize]);
+				set(h, 'EdgeColor', [1 0 0]);
+				plot(path(:,1),path(:,2),'g-');
+				hold off;
+			end
+			drawnow;
 % 			subplot(2,3,5); imshow(TargetModelImg);
 			
 		end
