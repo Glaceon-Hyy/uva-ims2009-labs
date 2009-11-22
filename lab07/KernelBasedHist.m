@@ -33,7 +33,7 @@ function H = KernelBasedHist(img, bin, objPos, objSize, kernel)
 		end
 	end
 
-	H = H / (size(img,1)*size(img,2));
+% 	H = H / (size(img,1)*size(img,2));
 end
 
 
