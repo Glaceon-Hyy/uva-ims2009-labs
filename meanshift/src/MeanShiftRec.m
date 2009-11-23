@@ -1,9 +1,9 @@
 %% MeanShift Algorithm Recursive
-function newCenter = MeanShiftRec(TargetModel, img, oldCenter, winSize, bin, kernel, iter, verbose)
+function newCenter = MeanShiftRec(TargetModel, img, oldCenter, winSize, bin, kernel, HistMethod, iter, verbose)
 	
 	oldCenter = round(oldCenter);
 
-	[TargetCanHist0 TargetCanImg0] = KernelBasedHist(img, bin, oldCenter, winSize, kernel);
+	[TargetCanHist0 TargetCanImg0] = KernelBasedHist(img, bin, oldCenter, winSize, kernel, HistMethod);
 	
 	y0Dist = HistDistance(TargetModel, TargetCanHist0, 4);
 
@@ -11,7 +11,7 @@ function newCenter = MeanShiftRec(TargetModel, img, oldCenter, winSize, bin, ker
 	CombHist(isnan(CombHist)) = 0;
 	CombHist(isinf(CombHist)) = 0;	
 	
-	weights = BackProjection(TargetCanImg0, CombHist, bin);
+	weights = BackProjection(TargetCanImg0, CombHist, bin, HistMethod);
 	
 % 	sum(TargetCanHist0(:))
 	
@@ -23,8 +23,12 @@ function newCenter = MeanShiftRec(TargetModel, img, oldCenter, winSize, bin, ker
 	%% calculate the new center: 
 	for i=1 : sizeWeights(1)
 		for j=2 : sizeWeights(2)
+			%% correct?
 			pos = [j-searchWindow(2) i-searchWindow(1)];
+
+% 			pos = [j-searchWindow(1) i-searchWindow(2)];
 % 			pos = [i-searchWindow(1) j-searchWindow(2)];
+% 			pos = [i-searchWindow(2) j-searchWindow(1)];
 			newCenter = newCenter + (pos.*weights(i,j));
 		end
 	end
@@ -55,7 +59,7 @@ function newCenter = MeanShiftRec(TargetModel, img, oldCenter, winSize, bin, ker
 	end
 	
 	
-	[TargetCanHist1 TargetCanImg1] = KernelBasedHist(img, bin, newCenter, winSize, kernel);
+	[TargetCanHist1 TargetCanImg1] = KernelBasedHist(img, bin, newCenter, winSize, kernel, HistMethod);
 	y1Dist = HistDistance(TargetModel, TargetCanHist1, 4);
 
 % 	subplot(2,3,4); imshow(TargetCanImg1);
@@ -63,26 +67,26 @@ function newCenter = MeanShiftRec(TargetModel, img, oldCenter, winSize, bin, ker
 % 	fprintf('Iter: %d, y0Dist: %d, y1Dist: %d\n', iter, y0Dist, y1Dist);
 	
 	
-	while y1Dist < y0Dist
-		newCenter = 0.5 * (oldCenter + newCenter);
-		
-		if ~insideImage(img, newCenter, winSize)
-			newCenter = oldCenter;
-		end
-		
-		[TargetCanHist1 TargetCanImg1] = KernelBasedHist(img, bin, newCenter, winSize, kernel);
-		y1Dist = HistDistance(TargetModel, TargetCanHist1, 4);		
+% 	while y1Dist < y0Dist
+% 		newCenter = 0.5 * (oldCenter + newCenter);
+% 		
+% 		if ~insideImage(img, newCenter, winSize)
+% 			newCenter = oldCenter;
+% 		end
+% 		
+% 		[TargetCanHist1 TargetCanImg1] = KernelBasedHist(img, bin, newCenter, winSize, kernel, HistMethod);
+% 		y1Dist = HistDistance(TargetModel, TargetCanHist1, 4);		
+% 
+% 		if verbose
+% 			subplot(1,3,2); imshow(TargetCanImg1);
+% 		end
+% 		
+% % 		fprintf('Iter: %d, oldCenter: [%d %d], newCenter: [%d %d]\n', iter, oldCenter(1), oldCenter(2), newCenter(1), newCenter(2));
+% % 		fprintf('Iter: %d, y0Dist: %d, y1Dist: %d\n', iter, y0Dist, y1Dist);
+% 	end
 
-		if verbose
-			subplot(1,3,2); imshow(TargetCanImg1);
-		end
-		
-% 		fprintf('Iter: %d, oldCenter: [%d %d], newCenter: [%d %d]\n', iter, oldCenter(1), oldCenter(2), newCenter(1), newCenter(2));
-% 		fprintf('Iter: %d, y0Dist: %d, y1Dist: %d\n', iter, y0Dist, y1Dist);
-	end
-
-	if norm(newCenter - oldCenter) > 0.1 && iter < 4
-		newCenter = MeanShiftRec(TargetModel, img, newCenter, winSize, bin, kernel, iter+1, verbose);
+	if norm(newCenter - oldCenter) > 0 && iter < 4
+		newCenter = MeanShiftRec(TargetModel, img, newCenter, winSize, bin, kernel, HistMethod, iter+1, verbose);
 	end
 
 end

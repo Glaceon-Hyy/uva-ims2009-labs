@@ -17,7 +17,7 @@
 %   location = findBestFit(hist_obj,area,img_seq[i])
 %   plot(box(location))
 % end
-function newPosition = BruteForce(TargetModel, img, position, objSize, widthArea, heightArea, sampleStep, bin, kernel)
+function newPosition = BruteForce(TargetModel, img, position, objSize, widthArea, heightArea, sampleStep, bin, kernel, histMethod)
 	newPosition = position;
 
 	startValX = position(1)-widthArea;
@@ -32,7 +32,7 @@ function newPosition = BruteForce(TargetModel, img, position, objSize, widthArea
 	for i = startValX : sampleStep : endValX
 		for j = startValY : sampleStep : endValY
 			pos = [i, j];
-			imPartHist = KernelBasedHist(img, bin, pos, objSize, kernel);
+			imPartHist = KernelBasedHist(img, bin, pos, objSize, kernel, histMethod);
 			temp = HistDistance(TargetModel, imPartHist, 2);
 			if temp < distVal
 				distVal = temp;
