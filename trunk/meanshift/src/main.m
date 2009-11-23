@@ -1,13 +1,13 @@
 %% Lab 7: Mean-shift tracking using Kernel Based Histograms
 
 %% Main function
-function main(colorSpace, trackingType, bin, verbose)
+function main(colorSpace, histMethod, bin, trackingType, verbose)
     close all;
 
 
     widthArea = 20;						%%
     heightArea = 20;					%%
-    directory = '../soccer/';		%% 
+    directory = '../data/';		%% 
 
 	
 	images = dir(directory);
@@ -23,6 +23,7 @@ function main(colorSpace, trackingType, bin, verbose)
 			%% normalized RGB
 			img = imconv(img,1); 
 		case 2
+			%% Opponent Color Space (Koen)
 			img = imconv(img,2)*255; 
 		case 3
 			img = imconv(img,3)*255; 
@@ -48,23 +49,32 @@ function main(colorSpace, trackingType, bin, verbose)
 	fprintf('ModelPos [%d %d]\n\n', ModelPos(1), ModelPos(2));
 	
 	
-	normH = [21 21];
+	normH = [51 51];
 	kernel = EpanechnikovKernel(normH(1), normH(2));
 
-	
+% 	[x y] = meshgrid(1:1:normH(1));
+% 	figure; mesh(x,y,kernel);
 	
 	position = ModelPos;
 	
 	center = ModelPos + ModelSize/2;
 	winSize = ModelSize/2;
+
+	
+	PSF = fspecial('gaussian', 7, 10);
+	img = imfilter(img,PSF,'symmetric','conv');
+	
 	
 	%% create the target model
-	[TargetModel TargetModelImg] = KernelBasedHist(img, bin, center, winSize, kernel);
+	[TargetModel TargetModelImg] = KernelBasedHist(img, bin, center, winSize, kernel, histMethod);
 	stm = sum(TargetModel(:))
 
 	for i=1:size(images,1)
 		img = imread([directory images(i).name]);
 		imgOriginal = img;
+		img = imfilter(img,PSF,'symmetric','conv');
+		
+		
 		fprintf('Processing %s\n', [directory images(i).name]);
 		switch colorSpace
 			case 0
@@ -91,7 +101,7 @@ function main(colorSpace, trackingType, bin, verbose)
 			position = BruteForce(TargetModel, ...
 								   img, ...
 								   position, ModelSize, ...
-								   widthArea, heightArea, 5, bin, kernel);
+								   widthArea, heightArea, 5, bin, kernel, histMethod);
 			imshow(imgOriginal);
 			imrect(gca,[position(1) position(2) ModelSize(1) ModelSize(2)]);
 	
@@ -100,7 +110,7 @@ function main(colorSpace, trackingType, bin, verbose)
 			center = MeanShiftRec(TargetModel, ...
 								img, ... 
 								center, winSize, ...
-								bin, kernel, 1, verbose);
+								bin, kernel, histMethod, 1, verbose);
 			path(i,:) = center;
 
 
