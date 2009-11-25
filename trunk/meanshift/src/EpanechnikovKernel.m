@@ -4,31 +4,60 @@ function kernel = EpanechnikovKernel(normHx, normHy)
 	%% The mask will be used to directly assign weights to the pixels in
 	%% maskedObj when creating the histogram.
 
-	U = (normHx-1)/2;
-	V = (normHy-1)/2;
-	u=1;
-	v=1;
 	kernel = zeros(normHx, normHy);
 	
+	stepSizeX = 2.0/normHx; 
+	stepSizeY = 2.0/normHy;
+	
+	U = -1:stepSizeX:1;
+	V = -1:stepSizeY:1;
 	
 	%% denominator of normalization factor C
 	Cden = 0;
 	%% create the kernel for the target model
-	for i=-U:1:U
-		for j=-V:1:V
-			x = normPos(i,j)/normHx;
+	for u=1:size(U,2)
+		for v=1:size(V,2)
+% 			x = normPos(i,j)/(normHx*2);
+			x = normPos(U(u),V(v));
 
 			kernel(u,v) = Ek(x^2);
 			Cden = Cden + kernel(u,v);
-			v = v + 1;
 		end
-		v = 1;
-		u = u + 1;
 	end
 	%% normalize kernel imposing the condition sum(histogram) = 1
 	kernel = kernel * (1/Cden);
+	
+end
+%{
+function kernel = kernel( xSteps,ySteps,kernelTF )
+
+    if kernelTF
+        d =2;
+        cd = pi;
+
+        xStepSize = 2.0/xSteps;
+        yStepSize = 2.0/ySteps;
+
+        x = -1:xStepSize:1;
+        y = -1:yStepSize:1;
+        kernel = zeros(size(x,2),size(y,2));
+
+        for u=1:size(x,2)
+            for v=1:size(y,2)
+                normXY = sqrt(x(u)^2+y(v)^2)^2;
+                if normXY<1
+                    kernel(u,v) = 0.5*(cd^-1)*(d+2)*(1-normXY);
+                else
+                    kernel(u,v) = 0;
+                end
+            end
+        end
+    else
+        kernel= ones(xSteps,ySteps);
+    end
 end
 
+%}
 
 function n = normPos(u,v)
 	u = double(u);
@@ -40,11 +69,12 @@ end
 %%   0.5 * Cd^(-1) * (d + 2) * (1 - |x|^2) if |x| =< 1,
 %%   0 otherwise.
 function y = Ek(x)
-	%% NOTE: what value to assign for Cd?
-	Cd = 2; 
-	d = 2; % given
+	%% given
+	Cd = pi; 
+	d = 2;
+	
 	Kx = 0.5*Cd^(-1)*(d + 2)*(1-abs(x)^2);
-	if x <= 1
+	if x < 1
 		y = Kx;
 	else
 		y = 0;

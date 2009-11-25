@@ -25,10 +25,6 @@ function newCenter = MeanShiftRec(TargetModel, img, oldCenter, winSize, bin, ker
 		for j=2 : sizeWeights(2)
 			%% correct?
 			pos = [j-searchWindow(2) i-searchWindow(1)];
-
-% 			pos = [j-searchWindow(1) i-searchWindow(2)];
-% 			pos = [i-searchWindow(1) j-searchWindow(2)];
-% 			pos = [i-searchWindow(2) j-searchWindow(1)];
 			newCenter = newCenter + (pos.*weights(i,j));
 		end
 	end
@@ -45,6 +41,7 @@ function newCenter = MeanShiftRec(TargetModel, img, oldCenter, winSize, bin, ker
 	end
 		
 	if verbose
+		subplot(1,3,2); imshow(TargetCanImg0);
 		subplot(1,3,3); imshow(weights);
 		Shift = shift
 		C = ginput(1);
