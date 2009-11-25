@@ -52,8 +52,9 @@ function main(colorSpace, histMethod, bin, trackingType, verbose)
 	normH = [51 51];
 	kernel = EpanechnikovKernel(normH(1), normH(2));
 
-% 	[x y] = meshgrid(1:1:normH(1));
+% 	[x y] = meshgrid(1:1:normH(1)+1);
 % 	figure; mesh(x,y,kernel);
+% 	figure;
 	
 	position = ModelPos;
 	
@@ -69,7 +70,11 @@ function main(colorSpace, histMethod, bin, trackingType, verbose)
 	[TargetModel TargetModelImg] = KernelBasedHist(img, bin, center, winSize, kernel, histMethod);
 	stm = sum(TargetModel(:))
 
+	
+% 	M = zeros(size(images,1), size(img,1), size(img,2));
+% 	path = zeros(size(images,1),2);
 	for i=1:size(images,1)
+		tic;
 		img = imread([directory images(i).name]);
 		imgOriginal = img;
 		img = imfilter(img,PSF,'symmetric','conv');
@@ -105,8 +110,8 @@ function main(colorSpace, histMethod, bin, trackingType, verbose)
 			imshow(imgOriginal);
 			imrect(gca,[position(1) position(2) ModelSize(1) ModelSize(2)]);
 	
-		else
-			%% perform mean shift search
+		elseif trackingType == 2
+			%% perform mean shift search (recursive version)
 			center = MeanShiftRec(TargetModel, ...
 								img, ... 
 								center, winSize, ...
@@ -131,12 +136,39 @@ function main(colorSpace, histMethod, bin, trackingType, verbose)
 				hold off;
 			end
 			drawnow;
-% 			subplot(2,3,5); imshow(TargetModelImg);
 			
+		else
+			%% perform mean shift (iterative version)
+			center = MeanShiftIter(TargetModel, ...
+								img, ... 
+								center, winSize, ...
+								bin, kernel, histMethod, 1, verbose);
+			path(i,:) = center;
+
+
+% 			subplot(2,3,1); 
+			if verbose
+				hold on;
+				subplot(1,3,1); imshow(imgOriginal);
+				h = rectangle('Position', [center - winSize ModelSize]);
+				set(h, 'EdgeColor', [1 0 0]);
+% 				plot(path(:,1),path(:,2),'g-');
+				hold off;
+			else
+				hold on;
+				imshow(imgOriginal);
+				h = rectangle('Position', [center - winSize ModelSize]);
+				set(h, 'EdgeColor', [1 0 0]);
+				plot(path(:,1),path(:,2),'g-');
+				hold off;
+			end
+			clear fun MeanShiftIter
+			drawnow;
 		end
-		M(i) = getframe;
+% 		M(i,:,:) = getframe;
+		toc;
 	end
-	movie(M,1,30);
+% 	movie(M,1,30);
 end
 
 
