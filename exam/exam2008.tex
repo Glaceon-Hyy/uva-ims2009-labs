@@ -53,23 +53,28 @@
 	\section*{Question 3: Object Colors}
 
 	\section*{Question 4: Color Invariants}
-	\subsection*{a}
-		$\ds\frac{R}{R + G + B} = \ds\frac{I \cdot K_R \cos \theta}{I \cdot K_R \cos \theta + I \cdot K_G \cos \theta + I \cdot K_B \cos \theta} = \ds\frac{K_R}{K_R + K_G + K_B}$
-	\subsection*{b}
-		Flat surface, so surface normal is the same at $x_1$ and $x_2$. Thus it follows that
-		$\ds\frac{R_{x_1} = I \cdot K_R(x_1) \cos \theta}{R_{x_2} = I \cdot K_R(x_2) \cos \theta} = \ds\frac{K_R(x_1)}{K_R(x_2)}$.
+		\subsection*{a}
+			$\ds\frac{R}{R + G + B} = \ds\frac{I \cdot K_R \cos \theta}{I \cdot K_R \cos \theta + I \cdot K_G \cos \theta + I \cdot K_B \cos \theta} = \ds\frac{K_R}{K_R + K_G + K_B}$
 
-	\subsection*{c}
+		\subsection*{b}
+			Flat surface, so surface normal is the same at $x_1$ and $x_2$. Thus it follows that
+			$\ds\frac{R_{x_1} = I \cdot K_R(x_1) \cos \theta}{R_{x_2} = I \cdot K_R(x_2) \cos \theta} = \ds\frac{K_R(x_1)}{K_R(x_2)}$.
 
-	\subsection*{d}
-	\[\sigma_q = \sqrt{(2\cdot4^2)+(1\cdot4^2)}\] 
-	is stable. It's not dependent on RGB. (derivatives of 2R+B wrt R or B are constants).
-	\subsection*{e}
-	\[\frac{d}{dG}=\frac{-1}{a^3}\cdot 2\]
-	\[\sigma_q = \sqrt{(\frac{-2}{a^3}\cdot4^2)}\] 	
-	\subsection*{f}
-		$rgb$ becomes unstable when the intensity gets really low. When $r=\frac{R}{R+G+B}$ the nominator and denominator are near zero, the division will converge towards 1.
-	\subsection*{g}
-		Hue becomes unstable when the intensity and the saturation are near zero. This is because the arctan has an asymptote around the origin, therefore the hue will have big jumps when the intensity or the saturation.
+		\subsection*{c}
+			Depends on how much invariance we want?
+
+		\subsection*{d}
+			\[\sigma_q = \sqrt{(2\cdot4^2)+(1\cdot4^2)}\] 
+			is stable. It's not dependent on RGB. (derivatives of 2R+B wrt R or B are constants).
+		\subsection*{e}
+			\[\frac{d}{dG}=\frac{-1}{a^3}\cdot 2\]
+			\[\sigma_q = \sqrt{(\frac{-2}{a^3}\cdot4^2)}\] 
+		\subsection*{f}
+			$rgb$ becomes unstable when the intensity gets really low. When $r=\frac{R}{R+G+B}$
+			the nominator and denominator are near zero, the division will converge towards 1.
+		\subsection*{g}
+			Hue becomes unstable when the intensity and the saturation are near zero. This is
+			because the arctan has an asymptote around the origin, therefore the hue will have
+			big jumps when the intensity or the saturation.
 
 \end{document}
