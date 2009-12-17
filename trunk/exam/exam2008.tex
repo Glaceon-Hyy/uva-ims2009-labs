@@ -1,0 +1,45 @@
+\documentclass[a4paper,11pt]{article}
+\title{Intelligent Multimedia Systems \\ Exam 2008}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{float}
+\newcommand{\ds}{\displaystyle}
+\newcommand{\tbf}{\textbf}
+
+\begin{document}
+	\maketitle
+	\section*{Question 1: Indexing and searching}
+	
+	\subsection*{a}
+	\tbf{Q.} What is a signature file and how does it works? \\
+	\tbf{A.} A signature file is a data structure 
+	
+	\subsection*{b}
+	\tbf{Q.} What is an inverted file and how does it works? \\
+	\tbf{A.} Instances have a datastructure containing a mapping from content to the location in the database. When given a query, the inverted file (or index) will return all documents containing the query. For example, we can have blocks of texts containing words. A mapping to the words
+	
+	\subsection*{c} Certain terms carry more information than others. For example, nouns will have less frequencies among documents, but are more probable to satisfy the query than for example determiners which have many frequencies among documents. Low-frequency terms are more specific to satisfy the query, but when having multiple results for the same query, the document with the highest term-frequency will be the best choice.
+	
+	\subsection*{d}
+	\tbf{Q.} How does relevance feedback works?
+	\tbf{A.} Relevance feedback: user feedback on relevance of docs/images in initial set of results
+	\begin{itemize}
+		\item User issues a (short, simple) query
+		\item The user marks returned documents/images as relevant or non- relevant.
+		\item The system computes a better representation of the information need based on feedback.
+		\item Relevance feedback can go through one or more iterations.
+	\end{itemize}
+	Idea: it may be difficult to formulate a good query when you don’t know the collection well, so iterate
+	
+	\subsection*{e}
+	Difference between positive and negative feedback is the class to which the user determines an instance belongs to. Thus, a relevant instance for the user results in positive feedback and a non-relevant instance  for the user results in negative feedback.
+	
+	\section*{Question 2: Retrieval Effectiviness}
+	
+	\section*{Question 3: Object Colors}
+	
+	\section*{Question 4: Color Invariants}
+	
+	
+\end{document}
