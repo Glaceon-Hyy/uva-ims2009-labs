@@ -31,20 +31,34 @@
 		\item Relevance feedback can go through one or more iterations.
 	\end{itemize}
 	Idea: it may be difficult to formulate a good query when you don't know the collection well, so iterate
-	
+
 	\subsection*{e}
-	Difference between positive and negative feedback is the class to which the user determines an instance belongs to. Thus, a relevant instance for the user results in positive feedback and a non-relevant instance  for the user results in negative feedback.
-	
-	\section*{Question 2: Retrieval Effectiviness}
-	
+		Difference between positive and negative feedback is the class to which the user
+		determines an instance belongs to. Thus, a relevant instance for the user results
+		in positive feedback and a non-relevant instance  for the user results in negative
+		feedback.
+
+	\section*{Question 2: Retrieval Effectiveness}
+		\subsection*{a}
+			precision := (relevant found docs) / (total found docs)\\
+			recall := (relevant found docs) / (total relevant docs)\\
+			Check which docs are relevant, and count the number of found docs per query: in
+			this case 4 for S1Q1, so S1's Q1 precision is 4/15 and S1's recall is 4/10. Repeat
+			for S1Q2, S2Q1, S2Q2.
+		\subsection*{b}
+			Calculate precision for S1 at R=1/10, 2/10, 3/10 4/10 and plot.\\
+			Calculate precision for S2 at R=1/10, 2/10, 3/10 4/10 and plot.\\
+			Need to do this for both queries...
+
 	\section*{Question 3: Object Colors}
-	
+
 	\section*{Question 4: Color Invariants}
 	\subsection*{a}
 		$\ds\frac{R}{R + G + B} = \ds\frac{I \cdot K_R \cos \theta}{I \cdot K_R \cos \theta + I \cdot K_G \cos \theta + I \cdot K_B \cos \theta} = \ds\frac{K_R}{K_R + K_G + K_B}$
 	\subsection*{b}
+		Flat surface, so surface normal is the same at $x_1$ and $x_2$.
 	\subsection*{c}
-	
+
 	\subsection*{d}
 	\[\sigma_q = \sqrt{(2\cdot4^2)+(1\cdot4^2)}\] 
 	is stable. It's not dependent on RGB. (derivatives of 2R+B wrt R or B are constants).
