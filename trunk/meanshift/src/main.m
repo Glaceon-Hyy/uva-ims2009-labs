@@ -1,13 +1,33 @@
-%% Lab 7: Mean-shift tracking using Kernel Based Histograms
+%% Mean-shift tracking using Kernel Based Histograms
 
 %% Main function
 function main(colorSpace, histMethod, bin, trackingType, verbose)
+% colorSpace: 
+%		0- RGB
+%		1- normalized RGB
+%		2- OSC (koen)
+%		3- HSV (wikipedia)
+%		4- HSI (theo)
+%		5- HSV (matlab)
+%		6- OCS
+% histMethod:
+%		number of channels to use (1, 2 or 3)
+% bin:
+%		number of bins to use for the histograms (20 works fine)
+% trackingType:
+%		1- brute-force
+%		2- mean-shift recursive
+%		3- mean-shift iterative
+% verbose:
+%		0-display tracking information
+%		1-display extra debug information
+
     close all;
 
 
     widthArea = 20;						%%
     heightArea = 20;					%%
-    directory = '../data/';		%% 
+    directory = '../soccer/';		%% 
 
 	
 	images = dir(directory);
@@ -108,7 +128,7 @@ function main(colorSpace, histMethod, bin, trackingType, verbose)
 								   position, ModelSize, ...
 								   widthArea, heightArea, 5, bin, kernel, histMethod);
 			imshow(imgOriginal);
-			imrect(gca,[position(1) position(2) ModelSize(1) ModelSize(2)]);
+			imrect(gca,[position- winSize ModelSize]);
 	
 		elseif trackingType == 2
 			%% perform mean shift search (recursive version)
@@ -119,7 +139,6 @@ function main(colorSpace, histMethod, bin, trackingType, verbose)
 			path(i,:) = center;
 
 
-% 			subplot(2,3,1); 
 			if verbose
 				hold on;
 				subplot(1,3,1); imshow(imgOriginal);
@@ -166,6 +185,7 @@ function main(colorSpace, histMethod, bin, trackingType, verbose)
 			drawnow;
 		end
 % 		M(i,:,:) = getframe;
+		toc;
 		toc;
 	end
 % 	movie(M,1,30);
