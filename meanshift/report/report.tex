@@ -60,6 +60,60 @@
 	\maketitle
 
 	\section*{Introduction}
+		As stated above, tracking means establishing the position of a target
+		in subsequent video frames.  So you start with a target at a known
+		position, you create a target represenation and then you will try to
+		find the position that best matches the target in the next frame.
+		The only trick you may use in brute force tracking is exploiting
+		the knowledge that the new position of the object will be close
+		to the previous one.
+		\\ \\
+		So you'll probably try to match the target with all position within
+		a certain distanceof the previous position and keep the best match.
+		This is basically all there is to it (it is after all brute force).
+		\\ \\
+		The brute-force tracker works by simply comparing all histograms
+		of every possible location with the learned target histogram. Since
+		this in infeasible for every possible location in the entire image,
+		you are allowed to constrain your search space by only looking in a
+		region around the previous location. So, if the target at the previous
+		frame was at location (x,y), then your search space is restricted from
+		(x - width, y - height) to (x + width, y + height), where (width, height)
+		determines your search window.
+		\\ \\
+		The first step towards a Mean-Shift tracker is implementing kernel
+		weighted histograms. This means that when you create a histogram of
+		your target or candidate, you weigh the pixel values according to
+		their distance from the centre. The rationale of this is that
+		pixels further from the centre of an object are more likely to
+		be occluded or otherwise transformed during the tracking. Another
+		reason is that the kernel creates a smooth landscape of histogram
+		distances; the smoothness is needed to perform the mean-shift step
+		later on. The way I implemented this was by creating a mask of the
+		weight function. This was a 2D array, from which I could easily
+		retrieve the weight for each pixel position. This weight was added
+		to the corresponding bin in the histogram. The mean-shift tracker
+		uses the Epanechnikov kernel. The formula is in the paper, but you
+		will need these constants: $d = 2, c_d = \pi$. In my implementation
+		the kernel is calculated beforehand and store the values in a matrix
+		the size of the target region. This way I can look up the weight of
+		a pixel with one look in the kernel matrix.
+		\\ \\
+		For this you need a function that can take the histogram at a certain
+		point (x,y coordinates). The nicest way is to use the centre of the
+		target as reference (origin), but you can also adjust the coordinates
+		to get the same result. By making the mask the same dimensions as the
+		target, you can map the locations one-to-one, making it easy to retrieve
+		the correct weights.
+		\\ \\
+		I think it is best that you just start to program and develop by trial
+		and error.
+		\\ \\
+		Since Matlab requires a huge amount of memory for reading all the frames,
+		your computer will completely freeze is you try to read all the frames at
+		once. Therefore, you should read all the frames incrementally: when you
+		need a frame, read it in. So, you can process all the images in a for-loop.
+		During the tracking, you may like to save the frames into a movie-file.
 
 	\section*{Theoretical Background}
 
