@@ -59,7 +59,22 @@
 \begin{document}
 	\maketitle
 
+	\abstract{
+		We implement a mean-shift tracker for following objects in video.
+		Etcetera.
+	}
+
 	\section*{Introduction}
+		Robust real-time tracking of objects in a sequence of video frames is one of
+		the core problems of computer vision. A target object needs to be localized
+		and represented in such a way as to be insensitive to changes in illumination,
+		rapid movement, occlusion conditions, cluttering, and background appearance.
+		Furthermore, the per-frame computations should take no more than $100$
+		milliseconds to be useful for real-time applications. These challenging
+		conditions have led to many different approaches, most probabilistic in
+		nature.
+		\\ \\
+		KOEN:
 		As stated above, tracking means establishing the position of a target
 		in subsequent video frames.  So you start with a target at a known
 		position, you create a target represenation and then you will try to
@@ -116,11 +131,36 @@
 		During the tracking, you may like to save the frames into a movie-file.
 
 	\section*{Theoretical Background}
+		Two components can be distinguished in a tracker. The first is concerned
+		with localizing and representing the type of object to be tracked up from
+		the individual pixels, while the second deals with the high-level task of
+		filtering to describe object motion. (FIXME: TOO VAGUE?) In abstract terms,
+		this process of filtering can be modelled as a discrete-time dynamical system
+		through the well known state-space approach. Each state $x_k$ (for $k=0, 1, ...$)
+		characterizes the relevant information about the tracked object, and dynamically
+		evolves over time according to $x_k = f_k(x_{k - 1}, v_k)$ where $v_k$ is the
+		$k$-th (i.i.d) noise item. The states are not directly observable; rather a
+		sequence of measurements $\{z_k\}$ evolving via $z_k = h_k(x_k, n_k)$ (with
+		$\{n_k\}$ another i.i.d noise sequence) provides ``hints'' about the true
+		state at each time-step $k$, which is a latent variable. The tracker's task
+		is now to estimate $x_k$ given all preceding measurements $z_{1:k}$, ie. it
+		must recover the unknown probability density function $P(x_k \mid z_{1:k})$.
+		This formulation leads to the general technique of recursive Bayesian estimation,
+		which assumes the states $\{x_k\}$ and observations $\{z_k\}$ to be the hidden
+		and visible parts of a hidden Markov model (HMM). The RBE method constructs the
+		PDF in two steps conceptually similar to those of the Expectation-Maximization
+		algorithm family.
+		%% TODO: mention color-spaces, the baseline histogram-based brute-force tracker, ...
 
 	\section*{Implementation}
 
 	\section*{Evaluation and Results}
 
 	\section*{Conclusion}
+
+	\begin{thebibliography}{1}
+		\bibitem{KBOT}
+			D. Comaniciu, V. Ramesh, P. Meer: \textit{Kernel-Based Object Tracking}
+	\end{thebibliography}
 
 \end{document}
