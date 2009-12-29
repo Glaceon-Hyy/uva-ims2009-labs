@@ -60,102 +60,228 @@
 	\maketitle
 
 	\abstract{
-		We implement a mean-shift tracker for following objects in video.
-		Etcetera.
+		\noindent
+		We implement a mean-shift tracker in \verb|MATLAB| for following objects in
+		video and evaluate it on three different domains. The tracker's theoretical
+		underpinnings are described and we explore weaknesses in its design.
 	}
 
 	\section*{Introduction}
 		Robust real-time tracking of objects in a sequence of video frames is one of
 		the core problems of computer vision. A target object needs to be localized
 		and represented in such a way as to be insensitive to changes in illumination,
-		rapid movement, occlusion conditions, cluttering, and background appearance.
-		Furthermore, the per-frame computations should take no more than $100$
+		rapid movement, occlusion conditions, cluttering, background appearance, and
+		scale. Furthermore, the per-frame computations should take no more than $100$
 		milliseconds to be useful for real-time applications. These challenging
 		conditions have led to many different approaches, most probabilistic in
 		nature.
 		\\ \\
+		To track an object, we must iteratively establish its position in subsequent
+		frames based on a known initial position. The essential step is then to create
+		a target representation, such as a histogram, and attempt to find the position
+		that best matches this representation in the next frame(s). If the tracker
+		employs a brute-force algorithm, we may only exploit temporal locality in
+		this matching step; that is, we assume the object's new position will be
+		``close to'' its old one and search outwards in eg. a radial pattern. Such
+		a brute-force tracker does no more than comparing the histogram $h_{x,y}^{w,h}$
+		centered at each pixel $(x, y)$ with search-window dimensions $(w, h)$ to
+		the target object histogram $h_{O}$ specified beforehand. Although this
+		approach can be parallelized, the computational complexity renders it
+		generally infeasible for larger windows.
+		\\ \\
+		A more efficient strategy is to incorporate kernel-weighted histograms.
+		Each histogram pixel is now assigned a weight by a kernel mask based on
+		its distance from the center-point. Because pixels further from the
+		center of the tracked object will be the first to become occluded or
+		warped under transformation, their values are less reliable. A kernel
+		also imposes a ``smooth'' distance metric over histograms, which is
+		required for the mean-shift step. The target's center pixel acts as the
+		reference point; thus, the window width and height need to be odd.
+		The efficiency gain comes from the fact that we can now steer the
+		tracker towards the object's most likely new position by following
+		the gradient rather than by examining all pixels within the local
+		environment. This new position follows from the histogram with
+		smallest distance to the target histogram.
+		\\ \\
+		%% The mean-shift tracker is a special case of the kernel-based tracker.
+		%% Instead of doing a brute force search of all surrounding pixels, a gradient
+		%% method is used to efficiently move towards the new position of the target.
+		%% The new position of the target will of course be the positions of the candidate
+		%% histogram with the smallest distance from the target. But we won't calculate
+		%% the distance for all pixel positions, we will do it in an iterative fashion,
+		%% starting from the last known position.
 		KOEN:
-		As stated above, tracking means establishing the position of a target
-		in subsequent video frames.  So you start with a target at a known
-		position, you create a target represenation and then you will try to
-		find the position that best matches the target in the next frame.
-		The only trick you may use in brute force tracking is exploiting
-		the knowledge that the new position of the object will be close
-		to the previous one.
+		The mean-shift algorithm requires that we use a certain class of kernels for
+		our kernel based histograms, only for this class the algorithm has been proved
+		to converse (in most cases). So we need to calculate the Epanechnikov kernel.
+		The formula is in the paper, but you will need these constants: $d = 2, c_d = \pi$.
+		In my implementation I calculate the kernel beforehand and store the values in a
+		matrix the size of the target region. This way I can look up the weight of a pixel
+		with one look in the kernel matrix.
 		\\ \\
-		So you'll probably try to match the target with all position within
-		a certain distanceof the previous position and keep the best match.
-		This is basically all there is to it (it is after all brute force).
+		The mean-shift step looks quite complicated, but is essentially easy to implement,
+		once you know what is going on. It calculates the step that has to be taken from
+		the current position towards the new position. The next step in the mean-shift
+		algorithm is a little trick to compensate for too large mean-shift steps. Occasionally
+		the calculated step is too large, the next step would of course move (back) towards
+		the optimal position, but mean-shift calculations are expensive. Therefore it is
+		efficient to correct for the overshoot and this step does just that. It picks a
+		point between the previously and newly calculated position and sees if that point
+		is a better match (compare histograms) than the calculated position. If it is the
+		position half-way is chosen and the process is repeated. This will correct overshoot
+		without needing another mean-shift step.
 		\\ \\
-		The brute-force tracker works by simply comparing all histograms
-		of every possible location with the learned target histogram. Since
-		this in infeasible for every possible location in the entire image,
-		you are allowed to constrain your search space by only looking in a
-		region around the previous location. So, if the target at the previous
-		frame was at location (x,y), then your search space is restricted from
-		(x - width, y - height) to (x + width, y + height), where (width, height)
-		determines your search window.
+		The basis of the mean-shift tracker is a kernel based histogram creation function.
+		You will need to implement this. This function takes a position or offset as parameter
+		and will then calculate the histogram for an area of width x height pixels. This means
+		finding the proper bin for each pixel and looking up the weight from the kernel function
+		(see Lab 8), this weight is then added to the calculated bin. This function needs to be
+		completed before you can start on the mean-shift tracker. Note: these kernel weights
+		mentioned here are values of the kernel function k(). Assuming that this weight is w
+		would be a mistake.
 		\\ \\
-		The first step towards a Mean-Shift tracker is implementing kernel
-		weighted histograms. This means that when you create a histogram of
-		your target or candidate, you weigh the pixel values according to
-		their distance from the centre. The rationale of this is that
-		pixels further from the centre of an object are more likely to
-		be occluded or otherwise transformed during the tracking. Another
-		reason is that the kernel creates a smooth landscape of histogram
-		distances; the smoothness is needed to perform the mean-shift step
-		later on. The way I implemented this was by creating a mask of the
-		weight function. This was a 2D array, from which I could easily
-		retrieve the weight for each pixel position. This weight was added
-		to the corresponding bin in the histogram. The mean-shift tracker
-		uses the Epanechnikov kernel. The formula is in the paper, but you
-		will need these constants: $d = 2, c_d = \pi$. In my implementation
-		the kernel is calculated beforehand and store the values in a matrix
-		the size of the target region. This way I can look up the weight of
-		a pixel with one look in the kernel matrix.
+		For the tracking fase you calculate the kernel based histogram for the target. Then
+		for each new frame you calculate the histogram at the last known position of the target,
+		this is the candidate histogram. The kernel and histogram are centred around the position.
+		For the mean-shift step you will calculate for a region of width x height pixels, centred
+		on the candidate position a combination of formula 10 and 13 from the paper to get a new y.
 		\\ \\
-		For this you need a function that can take the histogram at a certain
-		point (x,y coordinates). The nicest way is to use the centre of the
-		target as reference (origin), but you can also adjust the coordinates
-		to get the same result. By making the mask the same dimensions as the
-		target, you can map the locations one-to-one, making it easy to retrieve
-		the correct weights.
+		After performing this formula, you have the mean-shift, the amount you need to adapt your
+		position to move closer to the target. The following step in the paper is sort of a hack
+		to compensate for too large shifts. The algorithm sometimes calculates a step that will
+		move beyond the target. Subsequent mean-shift steps will lead to the optimal position,
+		but it is computationally cheaper to solve this in another way: See if the position halfway
+		between the calculated new position and the original position is a better match (Bhattacharyya),
+		if it is: take this position as new position and repeat.
 		\\ \\
-		I think it is best that you just start to program and develop by trial
-		and error.
+		One final issue regarding the processing of the frames is this. In lab 6, I gave a little
+		piece of code to read the frames subsequently. The whole idea of tracking is, that you try
+		to track a player in MULTIPLE frames. So, do not stop after one or two frames, but see how
+		your algorithm handles several frames in a row. Ideally, you would process all subsequent
+		frames, but if this takes too long, you could consider to skip some (one or two) frames
+		after processing a frame, eg. after processing frame x, continue with frame (x+1); however,
+		if it takes too long, then skip frame (x+1) and continue with frame (x+2). However, please
+		keep in mind that tracking does not stop after one frame! See what happens if you track a
+		player over several seconds of video.
 		\\ \\
-		Since Matlab requires a huge amount of memory for reading all the frames,
-		your computer will completely freeze is you try to read all the frames at
-		once. Therefore, you should read all the frames incrementally: when you
-		need a frame, read it in. So, you can process all the images in a for-loop.
-		During the tracking, you may like to save the frames into a movie-file.
+		After processing the frames, it would be nice to see the results of your tracking algorithm.
+		You can do this by painting a rectangle in a frame on the new position and write this image
+		to disk. However, Matlab also provides the possibility to create an avifile from your frames.
+		The matlab-function to do this is called \verb|avifile|. 
 
 	\section*{Theoretical Background}
-		Two components can be distinguished in a tracker. The first is concerned
-		with localizing and representing the type of object to be tracked up from
-		the individual pixels, while the second deals with the high-level task of
-		filtering to describe object motion. (FIXME: TOO VAGUE?) In abstract terms,
-		this process of filtering can be modelled as a discrete-time dynamical system
-		through the well known state-space approach. Each state $x_k$ (for $k=0, 1, ...$)
-		characterizes the relevant information about the tracked object, and dynamically
-		evolves over time according to $x_k = f_k(x_{k - 1}, v_k)$ where $v_k$ is the
-		$k$-th (i.i.d) noise item. The states are not directly observable; rather a
-		sequence of measurements $\{z_k\}$ evolving via $z_k = h_k(x_k, n_k)$ (with
-		$\{n_k\}$ another i.i.d noise sequence) provides ``hints'' about the true
+		Two components can be distinguished in a tracker; the \textit{Object Model}
+		and the \textit{Tracking Model}. The first is concerned with localizing and
+		representing the type of object to be tracked up from the individual pixels,
+		while the second deals with the high-level task of filtering to describe object
+		motion.
+		%% (FIXME: TOO VAGUE?)
+		In abstract terms, this process of filtering can be modelled as a discrete-time
+		dynamical system through the well known state-space approach. Each state $x_k$
+		(for $k=0, 1, ...$) characterizes the relevant information about the tracked
+		object, and dynamically evolves over time according to $x_k = f_k(x_{k - 1}, v_k)$
+		where $v_k$ is the $k$-th (i.i.d) noise item. The states are not directly observable;
+		rather a sequence of measurements $\{z_k\}$ evolving via $z_k = h_k(x_k, n_k)$
+		(with $\{n_k\}$ another i.i.d noise sequence) provides ``hints'' about the true
 		state at each time-step $k$, which is a latent variable. The tracker's task
 		is now to estimate $x_k$ given all preceding measurements $z_{1:k}$, ie. it
 		must recover the unknown probability density function $P(x_k \mid z_{1:k})$.
 		This formulation leads to the general technique of recursive Bayesian estimation,
 		which assumes the states $\{x_k\}$ and observations $\{z_k\}$ to be the hidden
 		and visible parts of a hidden Markov model (HMM). The RBE method constructs the
-		p.d.f in two steps conceptually similar to those of the Expectation-Maximization
-		algorithm family.
+		p.d.f in a prediction and an update step conceptually similar to those of the
+		Expectation-Maximization algorithm family. When $v_k$ and $n_k$ are Gaussian
+		and the prediction and update functions $f_k$ and $h_k$ are (non-)linear, the
+		estimator becomes an instance of the (Extended) Kalman filter. However, other
+		filter classes can also be used.
 		\\ \\
-		%% TODO: mention color-spaces (RGB, nRGB, HSV, OSC), the baseline histogram-based brute-force tracker, ...
+		The mean-shift tracker assumes only small changes in location and appearance
+		of the target object between two consecutive frames. This enables an efficient
+		gradient-based localization scheme. Specifically, the target object is spatially
+		masked with an isotropic kernel, which allows defining a smooth similarity function
+		and reducing the localization problem to a search in this function's basin of attraction
+		(ie., all points in the state-space that enter the same region $R$ over time). The MST's
+		object model is given by a histogram in some color-space\footnote{We evaluate our tracker
+		in \verb|RGB|, \verb|rgb|, \verb|HSV|, and \verb|OSC| for a fixed number of bins per
+		dimension.}.
+		%%
+		%% TODO: mention color-spaces (RGB, nRGB, HSV, OSC)
+		%% TODO: algorithm pseudo-code overview like in the ELPL report
 
 	\section*{Implementation}
+		The Epanechnikov weight-function is implemented by pre-calculating a 2D
+		table of kernel values equal in size to the target region, which stores
+		the weight for each relative pixel position. We add the weight per pixel
+		to the corresponding histogram bin via a single lookup into this table.
+		\\ \\
+		Since caching all the frames of our animation test-sequences prior to
+		tracking would cost a prohibitive amount of memory, we read each frame
+		incrementally from disk on an as-needed basis. However, this reduces
+		performance. Ideally, for any given frame number, we would pre-load the
+		next $n$ frames in a separate thread, but \verb|MATLAB| provides no such
+		facilities.
+		\\ \\
+		Histogram distances
+		\\ \\
+		To check the result you get from the object detection and to maybe choose
+		between several detected objects, you can compare the histograms of the
+		target and the candidate objects. So you create a histogram for the candidate
+		objects in exactly the same fashion as you did for the target. Now you need
+		to compare the candidate and target histogram, in some meaningful way. The
+		reader (available on Blackboard and for sale in paper form as well) discusses
+		several methods. I will repeat two here:
+		\\ \\
+		Euclidean distance: The Euclidean distance between histograms calculates the
+		following distance between all histogram bins: $(b1 - b2)^2$, then sums this
+		over all bins and takes the square root.
+		\\ \\
+		Bhattacharyya distance: The Bhattacharyya distance is a measure to compare statistical
+		distributions, something that our histograms represent. The Bhattacharyya distance is
+		calculated as follows. First the Bhattacharyya coefficient is determined by
+		$\rho[p, q] = \int \sqrt{p(u) \cdot q(u) } \delta u$, then the Bhattacharyya
+		distance is determined from this by $d = \sqrt{1 - \rho[p, q]}$.
 
 	\section*{Evaluation and Results}
+		KOEN: If you think your tracker is finished, you can think about how to evaluate
+		the performance of your tracker. Further, you can think about the strong and
+		weak parts of your tracker, and propose possible improvements. If there is
+		enough time, you can implement one or more of your proposed improvements and
+		analyse the effect compared to the original tracker.
+		\\ \\
+		Once you think you completed the mean-shift tracker, it is time to test your
+		implementations on videos from different domains and analyze the performance
+		of different color spaces. What are the advantages and disadvantages of certain
+		color spaces, when do you think you should use one color space instead of the
+		other, etc. After that, you can think about improvements of the tracker. This
+		involves a thorough analysis of your current version, including an analysis of
+		the strong and weak points. If you know when your tracker goes wrong, you can
+		think of possible solutions to overcome these difficulties.
+		\\ \\
+		However, first think about how to evaluate the performance of your tracker. It
+		would be nice to show some quantitative results in your report, instead of pointing
+		at the videos and stating ``Look, it works!''. Several options exist, some more
+		time-consuming than others. Come talk to me if you have no clue on how to proceed
+		with this.
+		\\ \\
+		If you finished your tracker, and thought about how to evaluate it, then it is
+		tiime to test your tracker on videos from different domains. For this, you can
+		use the Internet to download videos or capture your own. For the conversion of
+		your videos into frames, I suggest you use the linux-program mplayer. Matlab can
+		also handle video-files, but you will get memory problems if you use videos that
+		are longer than a couple of seconds.
+		\\ \\
+		Note that the most important part is to implement the tracker in a correct way.
+		After you made sure your implementation is correct, try the tracker on a video
+		in a different domain (search on the internet to find a good video or create your
+		own video). Keep in mind that when looking for a suitable video, the goal is not
+		to show how good the tracker works, but try to put your finger on the strong and
+		weak parts of the algorithm. After you analyzed these strong and weak points of
+		the algorithm, try to come up with suggestions to improve your design. If there
+		is still enough time, you can implement one or more of your suggestions and analyze
+		the results (for instance, how does your improvement compare to the original algorithm
+		with respect to the weak as well as the strong parts of the original algorithm). If
+		you run out of time, you can describe how you would change the design and explain your
+		expectations of this change. 
 
 	\section*{Conclusion}
 
