@@ -101,7 +101,7 @@
 		tracker towards the object's most likely new position by following
 		the gradient rather than by examining all pixels within the local
 		environment. This new position is derived from the histogram with
-		smallest distance to the target's histogram representation.
+		smallest Bhattacharyya distance to the target's histogram representation.
 		\\ \\
 		%% The mean-shift tracker is a special case of the kernel-based tracker.
 		%% Instead of doing a brute force search of all surrounding pixels, a gradient
@@ -110,41 +110,40 @@
 		%% histogram with the smallest distance from the target. But we won't calculate
 		%% the distance for all pixel positions, we will do it in an iterative fashion,
 		%% starting from the last known position.
-		KOEN:
-		The mean-shift algorithm requires that we use a certain class of kernels for
-		our kernel based histograms, only for this class the algorithm has been proved
-		to converse (in most cases). So we need to calculate the Epanechnikov kernel.
-		The formula is in the paper, but you will need these constants: $d = 2, c_d = \pi$.
-		In my implementation I calculate the kernel beforehand and store the values in a
-		matrix the size of the target region. This way I can look up the weight of a pixel
-		with one look in the kernel matrix.
-		\\ \\
-		The mean-shift step looks quite complicated, but is essentially easy to implement,
-		once you know what is going on. It calculates the step that has to be taken from
-		the current position towards the new position. The next step in the mean-shift
-		algorithm is a little trick to compensate for too large mean-shift steps. Occasionally
-		the calculated step is too large, the next step would of course move (back) towards
-		the optimal position, but mean-shift calculations are expensive. Therefore it is
-		efficient to correct for the overshoot and this step does just that. It picks a
-		point between the previously and newly calculated position and sees if that point
-		is a better match (compare histograms) than the calculated position. If it is the
-		position half-way is chosen and the process is repeated. This will correct overshoot
-		without needing another mean-shift step.
-		\\ \\
-		The basis of the mean-shift tracker is a kernel based histogram creation function.
-		You will need to implement this. This function takes a position or offset as parameter
-		and will then calculate the histogram for an area of width x height pixels. This means
-		finding the proper bin for each pixel and looking up the weight from the kernel function
-		(see Lab 8), this weight is then added to the calculated bin. This function needs to be
-		completed before you can start on the mean-shift tracker. Note: these kernel weights
-		mentioned here are values of the kernel function k(). Assuming that this weight is w
-		would be a mistake.
-		\\ \\
-		For the tracking fase you calculate the kernel based histogram for the target. Then
-		for each new frame you calculate the histogram at the last known position of the target,
-		this is the candidate histogram. The kernel and histogram are centred around the position.
-		For the mean-shift step you will calculate for a region of width x height pixels, centred
-		on the candidate position a combination of formula 10 and 13 from the paper to get a new y.
+		%% KOEN:
+		%% The mean-shift algorithm requires that we use a certain class of kernels for
+		%% our kernel based histograms, only for this class the algorithm has been proved
+		%% to converge (in most cases). So we need to calculate the Epanechnikov kernel.
+		%% The formula is in the paper, but you will need these constants: $d = 2, c_d = \pi$.
+		%% In my implementation I calculate the kernel beforehand and store the values in a
+		%% matrix the size of the target region. This way I can look up the weight of a pixel
+		%% with one look in the kernel matrix.
+		%% The mean-shift step looks quite complicated, but is essentially easy to implement,
+		%% once you know what is going on. It calculates the step that has to be taken from
+		%% the current position towards the new position. The next step in the mean-shift
+		%% algorithm is a little trick to compensate for too large mean-shift steps. Occasionally
+		%% the calculated step is too large, the next step would of course move (back) towards
+		%% the optimal position, but mean-shift calculations are expensive. Therefore it is
+		%% efficient to correct for the overshoot and this step does just that. It picks a
+		%% point between the previously and newly calculated position and sees if that point
+		%% is a better match (compare histograms) than the calculated position. If it is the
+		%% position half-way is chosen and the process is repeated. This will correct overshoot
+		%% without needing another mean-shift step.
+		%% \\ \\
+		%% The basis of the mean-shift tracker is a kernel-based histogram creation function.
+		%% You will need to implement this. This function takes a position or offset as parameter
+		%% and will then calculate the histogram for an area of width x height pixels. This means
+		%% finding the proper bin for each pixel and looking up the weight from the kernel function
+		%% (see Lab 8), this weight is then added to the calculated bin. This function needs to be
+		%% completed before you can start on the mean-shift tracker. Note: these kernel weights
+		%% mentioned here are values of the kernel function k(). Assuming that this weight is w
+		%% would be a mistake.
+		%% \\ \\
+		In the tracking phase we calculate the kernel-based histogram for the target during
+		each frame $f$. Then for each new frame we calculate the \textit{candidate} histogram
+		centered at the target's last known position. A combination of equations $10$ and $13$
+		from \cite{KBOT} over a window of size $(w, h)$ then produces the new location estimate
+		$(x_{f+1}, y_{f+1})$.
 		\\ \\
 		After performing this formula, you have the mean-shift, the amount you need to adapt your
 		position to move closer to the target. The following step in the paper is sort of a hack
@@ -202,8 +201,7 @@
 		and reducing the localization problem to a search in this function's basin of attraction
 		(ie., all points in the state-space that enter the same region $R$ over time). The MST's
 		object model is given by a histogram in some color-space\footnote{We evaluate our tracker
-		in \verb|RGB|, \verb|rgb|, \verb|HSV|, and \verb|OSC| for a fixed number of bins per
-		dimension.}.
+		in RGB, rgb, HSV, and OSC for a fixed number of bins per dimension.}.
 		%%
 		%% TODO: mention color-spaces (RGB, nRGB, HSV, OSC)
 		%% TODO: algorithm pseudo-code overview like in the ELPL report
