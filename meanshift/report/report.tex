@@ -214,7 +214,14 @@
 		basin of attraction (ie., all points in the state-space that enter the same
 		region $R$ over time). The MST's object model is given by a histogram in some
 		color-space\footnote{We evaluate our tracker in RGB, rgb, HSV, and OSC for a
-		fixed number of bins per dimension at bin-width $16$.}.
+		fixed number of bins per dimension at bin-width $16$.}. This is a non-parametric
+		color density estimate, extracted both for the target-object model (p.d.f) $q$
+		and for the per-frame target-object candidates $p(\tbf{v})$; where $\tbf{v} = (x, y)$.
+		The similarity function between histograms $p$ and $q$ is abstractly denoted by
+		$\rho[p(\tbf{v}), q]$. This function is regularized by applying an isotropic spatial
+		Epanechnikov kernel to the objects so that large variations in spectral information
+		for adjacent image pixels are suppressed and continuous spatial data is retained,
+		allowing gradient-based search methods to be deployed.
 		\\ \\
 		TODO: discuss color-spaces (RGB, nRGB, HSV, OSC) and their importance, see \cite{COLOR}
 		\\ \\
@@ -291,46 +298,46 @@
 		\end{figure}
 
 	\section{Evaluation and Results}
-%% 		KOEN: If you think your tracker is finished, you can think about how to evaluate
-%% 		the performance of your tracker. Further, you can think about the strong and
-%% 		weak parts of your tracker, and propose possible improvements. If there is
-%% 		enough time, you can implement one or more of your proposed improvements and
-%% 		analyse the effect compared to the original tracker.
-%% 		\\ \\
-%% 		Once you think you completed the mean-shift tracker, it is time to test your
-%% 		implementations on videos from different domains and analyze the performance
-%% 		of different color spaces. What are the advantages and disadvantages of certain
-%% 		color spaces, when do you think you should use one color space instead of the
-%% 		other, etc. After that, you can think about improvements of the tracker. This
-%% 		involves a thorough analysis of your current version, including an analysis of
-%% 		the strong and weak points. If you know when your tracker goes wrong, you can
-%% 		think of possible solutions to overcome these difficulties.
-%% 		\\ \\
-%% 		However, first think about how to evaluate the performance of your tracker. It
-%% 		would be nice to show some quantitative results in your report, instead of pointing
-%% 		at the videos and stating ``Look, it works!''. Several options exist, some more
-%% 		time-consuming than others. Come talk to me if you have no clue on how to proceed
-%% 		with this.
-%% 		\\ \\
-%% 		If you finished your tracker, and thought about how to evaluate it, then it is
-%% 		tiime to test your tracker on videos from different domains. For this, you can
-%% 		use the Internet to download videos or capture your own. For the conversion of
-%% 		your videos into frames, I suggest you use the linux-program mplayer. Matlab can
-%% 		also handle video-files, but you will get memory problems if you use videos that
-%% 		are longer than a couple of seconds.
-%% 		\\ \\
-%% 		Note that the most important part is to implement the tracker in a correct way.
-%% 		After you made sure your implementation is correct, try the tracker on a video
-%% 		in a different domain (search on the internet to find a good video or create your
-%% 		own video). Keep in mind that when looking for a suitable video, the goal is not
-%% 		to show how good the tracker works, but try to put your finger on the strong and
-%% 		weak parts of the algorithm. After you analyzed these strong and weak points of
-%% 		the algorithm, try to come up with suggestions to improve your design. If there
-%% 		is still enough time, you can implement one or more of your suggestions and analyze
-%% 		the results (for instance, how does your improvement compare to the original algorithm
-%% 		with respect to the weak as well as the strong parts of the original algorithm). If
-%% 		you run out of time, you can describe how you would change the design and explain your
-%% 		expectations of this change. 
+		%% KOEN: If you think your tracker is finished, you can think about how to evaluate
+		%% the performance of your tracker. Further, you can think about the strong and
+		%% weak parts of your tracker, and propose possible improvements. If there is
+		%% enough time, you can implement one or more of your proposed improvements and
+		%% analyse the effect compared to the original tracker.
+		%% \\ \\
+		%% Once you think you completed the mean-shift tracker, it is time to test your
+		%% implementations on videos from different domains and analyze the performance
+		%% of different color spaces. What are the advantages and disadvantages of certain
+		%% color spaces, when do you think you should use one color space instead of the
+		%% other, etc. After that, you can think about improvements of the tracker. This
+		%% involves a thorough analysis of your current version, including an analysis of
+		%% the strong and weak points. If you know when your tracker goes wrong, you can
+		%% think of possible solutions to overcome these difficulties.
+		%% \\ \\
+		%% However, first think about how to evaluate the performance of your tracker. It
+		%% would be nice to show some quantitative results in your report, instead of pointing
+		%% at the videos and stating ``Look, it works!''. Several options exist, some more
+		%% time-consuming than others. Come talk to me if you have no clue on how to proceed
+		%% with this.
+		%% \\ \\
+		%% If you finished your tracker, and thought about how to evaluate it, then it is
+		%% time to test your tracker on videos from different domains. For this, you can
+		%% use the Internet to download videos or capture your own. For the conversion of
+		%% your videos into frames, I suggest you use the linux-program mplayer. Matlab can
+		%% also handle video-files, but you will get memory problems if you use videos that
+		%% are longer than a couple of seconds.
+		%% \\ \\
+		%% Note that the most important part is to implement the tracker in a correct way.
+		%% After you made sure your implementation is correct, try the tracker on a video
+		%% in a different domain (search on the internet to find a good video or create your
+		%% own video). Keep in mind that when looking for a suitable video, the goal is not
+		%% to show how good the tracker works, but try to put your finger on the strong and
+		%% weak parts of the algorithm. After you analyzed these strong and weak points of
+		%% the algorithm, try to come up with suggestions to improve your design. If there
+		%% is still enough time, you can implement one or more of your suggestions and analyze
+		%% the results (for instance, how does your improvement compare to the original algorithm
+		%% with respect to the weak as well as the strong parts of the original algorithm). If
+		%% you run out of time, you can describe how you would change the design and explain your
+		%% expectations of this change.
 		Evaluation of the tracker is not a trivial task where we are provided with a ground-truth
 		to use for measuring the performance of the tracker. Since we are interested in the various
 		pros and cons of the tracker we conducted experiments on several domains. For our experiments
