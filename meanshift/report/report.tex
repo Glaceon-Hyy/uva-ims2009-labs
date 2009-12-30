@@ -225,8 +225,6 @@
 		for adjacent image pixels are suppressed and continuous spatial data is retained,
 		allowing gradient-based search methods to be deployed.
 		\\ \\
-		TODO: discuss color-spaces (RGB, nRGB, HSV, OSC) and their importance, see \cite{COLOR}
-		\\ \\
 		The Bhattacharyya distance measures the similarity of two discrete or continuous
 		probability distributions. It is related to the Bhattacharyya coefficient, which
 		measures the amount of overlap between two statistical sample-sets. The coefficient
@@ -248,24 +246,60 @@
 
 
 	\section{Implementation}
-		The core of the implementation of the tracker follows the algorithm described in \cite{KBOT} closely, but with some small changes. 
+		The core of the implementation of the tracker follows the algorithm described
+		in \cite{KBOT} closely, but with some small changes.
 		\\ \\
-		The target model is represented by a kernel-weighted histogram. We implement the Epanechnikov weight-function by pre-calculating a 2D table of kernel values equal in size to the target region which stores the weight for each relative pixel position. We add the weight per pixel to the corresponding histogram bin via a single lookup into this table. The target region is scaled to unit height and width as well as any future candidate region, therefore the kernel needs to be calculated only once beforehand. 
+		%% We implement the Epanechnikov weight-function by pre-calculating a 2D
+		% table of kernel values equal in size to the target region, which stores
+		%% the weight for each relative pixel position. We add the weight per pixel
+		%% to the corresponding histogram bin via a single lookup into this table.
+		%% NOTE: DOES THE CODE ACTUALLY DO THIS?
+		The target model is represented by a kernel-weighted histogram. We implement
+		the Epanechnikov weight-function by pre-calculating a 2D table of kernel values
+		equal in size to the target region which stores the weight for each relative pixel
+		position. We add the weight per pixel to the corresponding histogram bin via a single
+		lookup into this table. The target region is scaled to unit height and width as well
+		as any future candidate region, therefore the kernel needs to be calculated only once
+		beforehand.
 		\\ \\
-		The weights needed to calculate the eventual shift are given by equation (10) from \cite{KBOT} and can be calculated at once using a back projection approach. By calculating $H=\sqrt{\frac{M}{H_0}}$, where $M$ is the target model and $H_0$ is the candidate histogram, the weights are stored in a histogram. Now it is possible to use back projection on this new histogram $H$ and the image patch $P_0$ to set the corresponding weight for every pixel in the image patch by using the histogram $H$ as a lookup table.
+		The weights needed to calculate the eventual shift are given by equation ($10$)
+		from \cite{KBOT} and can be calculated at once using a back projection approach.
+		By calculating $H=\sqrt{\frac{M}{H_0}}$, where $M$ is the target model and $H_0$
+		is the candidate histogram, the weights are stored in a histogram. Now it is
+		possible to use back-projection on this new histogram $H$ and the image patch
+		$P_0$ to set the corresponding weight for every pixel in the image patch by
+		using the histogram $H$ as a lookup table.
 		\\ \\
-		With the weights calculated, the shift from the current position to a new position is derived by summing over the products of the positions relative from the center of the image patch and their corresponding weights (line 18 in algorithm \ref{alg:MST}). This shift however can be too large, and the new position can pass the real position of the object. A method to deal with large shifts is to iteratively reduce the distance between the old position and the new position by a factor of $\frac{1}{2}$ until the condition $\rho_{H_1} < \rho_{H_0}$ is met, where $\rho_{H_x}$ is the Bhattacharyya distance between the target candidate histogram $H_x$ and the target model $M$.
+		With the weights calculated, the shift from the current position to a new position
+		is derived by summing over the products of the positions relative from the center
+		of the image patch and their corresponding weights (line 18 in algorithm \ref{alg:MST}).
+		This shift however can be too large, and the new position can pass the real position
+		of the object. A method to deal with large shifts is to iteratively reduce the distance
+		between the old position and the new position by a factor of $\frac{1}{2}$ until the
+		condition $\rho_{H_1} < \rho_{H_0}$ is met, where $\rho_{H_x}$ is the Bhattacharyya
+		distance between the target candidate histogram $H_x$ and the target model $M$.
 		\\ \\
-		The final step in the implementation is the acceptation or rejection of the new position with respect to the old position. In our implementation we set the condition to the norm of the new minus the old position to be zero in order to accept the new position. If this is not the case, the new position is used in a recursive call to the MeanShiftRecursive function. The depth of recursion is constrained to a maximum of 4 steps to keep reasonable speed and in practice it turns out that this depth gives good results.
+		The final step in the implementation is the acceptation or rejection of the new
+		position with respect to the old position. In our implementation we set the condition
+		to the norm of the new minus the old position to be zero in order to accept the new
+		position. If this is not the case, the new position is used in a recursive call to
+		the \verb|MeanShiftRecursive| function. The depth of recursion is constrained to a
+		maximum of $4$ steps to keep reasonable speed and in practice this depth gives good
+		results.
 		\\ \\
-		Since caching all the frames of our animation test-sequences prior to tracking would cost a prohibitive amount of memory, we read each frame incrementally from disk on an as-needed basis. However, this reduces performance. Ideally, for any given frame number, we would pre-load the	next $n$ frames in a separate thread, but \verb|MATLAB| provides no such	facilities.
+		Since caching all the frames of our animation test-sequences prior to
+		tracking would cost a prohibitive amount of memory, we read each frame
+		incrementally from disk on an as-needed basis. However, this reduces
+		performance. Ideally, for any given frame number, we would pre-load the
+		next $n$ frames in a separate thread, but \verb|MATLAB| provides no such
+		facilities.
 		\\ \\
-		A pseudo-code global overview of the tracker is included in algorithm \ref{alg:MST}.
+		A pseudo-code global overview of the tracker is included below.
 		\subsection{Algorithm}
 			\begin{algorithm}[H]
 				\caption{Mean-shift Tracker}
 				\begin{algorithmic}[1]
-				
+
 				\STATE {\tbf{function} MeanShift\_Tracker($D$,$M$)}
 				\STATE {$D$ = Image Sequence}
 				\STATE {$M$ = Target Model}
@@ -292,16 +326,25 @@
 					\STATE $newCenter = \frac{1}{2} \cdot (center + newCenter)$
 					\STATE evaluate $\rho_{H_1}$
 				\ENDWHILE
-				
-				
+
 				\IF {$\parallel newCenter - center \parallel > 0$ or $Iter<4$}
 					\STATE $newCenter \leftarrow$ MeanShiftRecursive($M$,$d$,$newCenter$,$K$, $Iter+1$)
 				\ELSE
 					\STATE \tbf{return} $newCenter$
-				\ENDIF			
+				\ENDIF
 				\end{algorithmic}
 				\label{alg:MST}
 			\end{algorithm}
+			\noindent
+			Of crucial importance to the implementation is the selection of the right
+			color-space for the target-object model. The color-space is a major factor
+			in determinining the tracker's discriminative ability based on whether it
+			is sensitive to illumination changes (eg. color and direction), specular
+			highlights, radiant intensity, object geometry and surface orientation,
+			and other properties. Very often the ``best''\footnote{In so far as this
+			can be objectively established.} color-space is also dependent on the
+			domain of interest. For example, when tracking soccer players, normalized
+			RGB-space BLABLA playing field BLABLA large diffuse surface.
 
 		%% Histogram distances
 		%% To check the result you get from the object detection and to maybe choose
@@ -392,7 +435,7 @@
 		occluded during tracking, since the tracker cannot handle this in our implementation. Another
 		important constraint to the videos is that there should not be any cuts to different cameras
 		in the movie when tracking the object. Since mean-shift tracks the object from frame to frame,
-		it cannot handle tracking objects that appear on totally different locations when having a cut
+		it cannot handle tracking objects that appear in totally different locations when having a cut
 		from camera to camera. A final constraint is that the object should not scale too much. The
 		tracker can deal with some scaling but the tracker patch does not grow or shrink when the object
 		gets scaled. The evaluation criterion is simple: for each video and for each color space, we test
@@ -473,6 +516,7 @@
 			\caption{}
 		\end{table}
 		\noindent
+
 
 	\section{Conclusion}
 
