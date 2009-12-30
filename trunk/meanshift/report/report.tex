@@ -66,7 +66,7 @@
 		underpinnings are described and we explore weaknesses in its design.
 	}
 
-	\section*{Introduction}
+	\section{Introduction}
 		Robust real-time tracking of objects in a sequence of video frames is one of
 		the core problems of computer vision. A target object needs to be localized
 		and represented in such a way as to be insensitive to changes in illumination,
@@ -95,13 +95,13 @@
 		center of the tracked object will be the first to become occluded or
 		warped under transformation, their values are less reliable. A kernel
 		also imposes a ``smooth'' distance metric over histograms, which is
-		required for the mean-shift step. The target's center pixel acts as the
-		reference point; thus, the window width and height need to be odd.
-		The efficiency gain comes from the fact that we can now steer the
-		tracker towards the object's most likely new position by following
-		the gradient rather than by examining all pixels within the local
-		environment. This new position is derived from the histogram with
-		smallest Bhattacharyya distance to the target's histogram representation.
+		required for the mean-shift step discussed below. The target's center
+		pixel acts as the reference point; thus, the window width and height
+		need to be odd. The efficiency gain comes from the fact that we can
+		now steer the tracker towards the object's most likely new position
+		by following the gradient rather than by examining all pixels within
+		the local environment. This new position is derived from the histogram
+		with smallest Bhattacharyya distance to the target's histogram representation.
 		\\ \\
 		%% The mean-shift tracker is a special case of the kernel-based tracker.
 		%% Instead of doing a brute force search of all surrounding pixels, a gradient
@@ -139,42 +139,54 @@
 		%% mentioned here are values of the kernel function k(). Assuming that this weight is w
 		%% would be a mistake.
 		%% \\ \\
+		%%
 		In the tracking phase we calculate the kernel-based histogram for the target during
 		each frame $f$. Then for each new frame we calculate the \textit{candidate} histogram
 		centered at the target's last known position. A combination of equations $10$ and $13$
 		from \cite{KBOT} over a window of size $(w, h)$ then produces the new location estimate
-		$(x_{f+1}, y_{f+1})$.
+		$(x_{f+1}, y_{f+1})$. This gives us the \textit{mean-shift} from which the tracker's name
+		is derived. However, a limitation of the algorithm is that this shift can sometimes exceed
+		the target, taking many extra iterations to be re-aligned. A practical hack to avoid this
+		problem as mentioned in \cite{KBOT} is to check whether the histogram at the position halfway
+		between the object's old position and the new estimate is a better match in terms of the
+		Bhattacharyya distance.
 		\\ \\
-		After performing this formula, you have the mean-shift, the amount you need to adapt your
-		position to move closer to the target. The following step in the paper is sort of a hack
-		to compensate for too large shifts. The algorithm sometimes calculates a step that will
-		move beyond the target. Subsequent mean-shift steps will lead to the optimal position,
-		but it is computationally cheaper to solve this in another way: See if the position halfway
-		between the calculated new position and the original position is a better match (Bhattacharyya),
-		if it is: take this position as new position and repeat.
-		\\ \\
-		One final issue regarding the processing of the frames is this. In lab 6, I gave a little
-		piece of code to read the frames subsequently. The whole idea of tracking is, that you try
-		to track a player in MULTIPLE frames. So, do not stop after one or two frames, but see how
-		your algorithm handles several frames in a row. Ideally, you would process all subsequent
-		frames, but if this takes too long, you could consider to skip some (one or two) frames
-		after processing a frame, eg. after processing frame x, continue with frame (x+1); however,
-		if it takes too long, then skip frame (x+1) and continue with frame (x+2). However, please
-		keep in mind that tracking does not stop after one frame! See what happens if you track a
-		player over several seconds of video.
-		\\ \\
-		After processing the frames, it would be nice to see the results of your tracking algorithm.
-		You can do this by painting a rectangle in a frame on the new position and write this image
-		to disk. However, Matlab also provides the possibility to create an avifile from your frames.
-		The matlab-function to do this is called \verb|avifile|. 
+		The remainder of this paper is organized as follows. Section $2$ outlines the mathematical
+		foundations of the mean-shift tracker in detail. Section $3$ relates this theory to our
+		\verb|MATLAB| implementation and issues we encountered. We evaluate our tracker and present
+		results in section $4$, and conclude in section $5$. Finally, section $6$ some directions
+		for future work are offered.
+		%%
+		%% After performing this formula, you have the mean-shift, the amount you need to adapt your
+		%% position to move closer to the target. The following step in the paper is sort of a hack
+		%% to compensate for too large shifts. The algorithm sometimes calculates a step that will
+		%% move beyond the target. Subsequent mean-shift steps will lead to the optimal position,
+		%% but it is computationally cheaper to solve this in another way: See if the position halfway
+		%% between the calculated new position and the original position is a better match (Bhattacharyya),
+		%% if it is: take this position as new position and repeat.
+		%% \\ \\
+		%% One final issue regarding the processing of the frames is this. In lab 6, I gave a little
+		%% piece of code to read the frames subsequently. The whole idea of tracking is, that you try
+		%% to track a player in MULTIPLE frames. So, do not stop after one or two frames, but see how
+		%% your algorithm handles several frames in a row. Ideally, you would process all subsequent
+		%% frames, but if this takes too long, you could consider to skip some (one or two) frames
+		%% after processing a frame, eg. after processing frame x, continue with frame (x+1); however,
+		%% if it takes too long, then skip frame (x+1) and continue with frame (x+2). However, please
+		%% keep in mind that tracking does not stop after one frame! See what happens if you track a
+		%% player over several seconds of video.
+		%% \\ \\
+		%% After processing the frames, it would be nice to see the results of your tracking algorithm.
+		%% You can do this by painting a rectangle in a frame on the new position and write this image
+		%% to disk. However, Matlab also provides the possibility to create an avifile from your frames.
+		%% The matlab-function to do this is called \verb|avifile|. 
 
-	\section*{Theoretical Background}
+	\section{Theoretical Background}
 		Two components can be distinguished in a tracker; the \textit{Object Model}
 		and the \textit{Tracking Model}. The first is concerned with localizing and
 		representing the type of object to be tracked up from the individual pixels,
 		while the second deals with the high-level task of filtering to describe object
 		motion.
-		%% FIXME: TOO VAGUE?
+		FIXME: TOO VAGUE?
 		In abstract terms, this process of filtering can be modelled as a discrete-time
 		dynamical system through the well known state-space approach. Each state $x_k$
 		(for $k=0, 1, ...$) characterizes the relevant information about the tracked
@@ -197,20 +209,41 @@
 		The mean-shift tracker assumes only small changes in location and appearance
 		of the target object between two consecutive frames. This enables an efficient
 		gradient-based localization scheme. Specifically, the target object is spatially
-		masked with an isotropic kernel, which allows defining a smooth similarity function
-		and reducing the localization problem to a search in this function's basin of attraction
-		(ie., all points in the state-space that enter the same region $R$ over time). The MST's
-		object model is given by a histogram in some color-space\footnote{We evaluate our tracker
-		in RGB, rgb, HSV, and OSC for a fixed number of bins per dimension.}.
-		%%
-		%% TODO: mention color-spaces (RGB, nRGB, HSV, OSC)
-		%% TODO: algorithm pseudo-code overview like in the ELPL report
+		masked with an isotropic kernel, which allows us to define a smooth similarity
+		function and reducing the localization problem to a search in this function's
+		basin of attraction (ie., all points in the state-space that enter the same
+		region $R$ over time). The MST's object model is given by a histogram in some
+		color-space\footnote{We evaluate our tracker in RGB, rgb, HSV, and OSC for a
+		fixed number of bins per dimension at bin-width $16$.}.
+		\\ \\
+		TODO: discuss color-spaces (RGB, nRGB, HSV, OSC) and their importance, see \cite{COLOR}
+		\\ \\
+		The Bhattacharyya distance measures the similarity of two discrete or continuous
+		probability distributions. It is related to the Bhattacharyya coefficient, which
+		measures the amount of overlap between two statistical sample-sets. The coefficient
+		can be used to determine the relative closeness of two given samples; in our case,
+		histograms. For continuous distributions, the coefficient is defined as
+		$\rho[p, q] = \int \sqrt{p(x) \cdot q(x) } \delta x$, $0 \leq \rho \leq 1$.
+		Calculating the Bhattacharyya coefficient involves integration of the overlap
+		of the two samples. The interval of the values of the two samples $a$ and $b$
+		is split into a chosen number of discrete bins $n$, and the number of members
+		$a_i$ and $b_i$ of each sample in each bin $i$ summed according to
+		$\sum_{i=1}^{n} \sqrt{\Sigma a_i \cdot \Sigma b_i}$. Each partition that contains
+		members from both samples contributes to the coefficient, as do partitions that
+		share a large degree of overlap of the members of the two samples  within it. The
+		choice of $n$ depends on the number of members in $a$ and $b$; too few partitions
+		will incur loss of accuracy by over-estimating the region of overlap, while too many
+		will also reduce the accuracy due to under-estimation. From $\rho$, the Bhattacharyya
+		\textit{distance} is determined by $d = \sqrt{1 - \rho[p, q]}$.
+		%% This is better than straight Euclidean distance because of FIXME.
 
-	\section*{Implementation}
-		The Epanechnikov weight-function is implemented by pre-calculating a 2D
+
+	\section{Implementation}
+		We implement the Epanechnikov weight-function by pre-calculating a 2D
 		table of kernel values equal in size to the target region, which stores
 		the weight for each relative pixel position. We add the weight per pixel
 		to the corresponding histogram bin via a single lookup into this table.
+		NOTE: DOES THE CODE ACTUALLY DO THIS?
 		\\ \\
 		Since caching all the frames of our animation test-sequences prior to
 		tracking would cost a prohibitive amount of memory, we read each frame
@@ -219,69 +252,196 @@
 		next $n$ frames in a separate thread, but \verb|MATLAB| provides no such
 		facilities.
 		\\ \\
-		Histogram distances
-		\\ \\
-		To check the result you get from the object detection and to maybe choose
-		between several detected objects, you can compare the histograms of the
-		target and the candidate objects. So you create a histogram for the candidate
-		objects in exactly the same fashion as you did for the target. Now you need
-		to compare the candidate and target histogram, in some meaningful way. The
-		reader (available on Blackboard and for sale in paper form as well) discusses
-		several methods. I will repeat two here:
-		\\ \\
-		Euclidean distance: The Euclidean distance between histograms calculates the
-		following distance between all histogram bins: $(b1 - b2)^2$, then sums this
-		over all bins and takes the square root.
-		\\ \\
-		Bhattacharyya distance: The Bhattacharyya distance is a measure to compare statistical
-		distributions, something that our histograms represent. The Bhattacharyya distance is
-		calculated as follows. First the Bhattacharyya coefficient is determined by
-		$\rho[p, q] = \int \sqrt{p(u) \cdot q(u) } \delta u$, then the Bhattacharyya
-		distance is determined from this by $d = \sqrt{1 - \rho[p, q]}$.
+		TODO: algorithm pseudo-code overview like in the ELPL report\\
+		TODO: COLOR-SPACE IMAGES HERE
+		%% Histogram distances
+		%% To check the result you get from the object detection and to maybe choose
+		%% between several detected objects, you can compare the histograms of the
+		%% target and the candidate objects. So you create a histogram for the candidate
+		%% objects in exactly the same fashion as you did for the target. Now you need
+		%% to compare the candidate and target histogram, in some meaningful way. The
+		%% reader (available on Blackboard and for sale in paper form as well) discusses
+		%% several methods. I will repeat two here:
+		%% \\ \\
+		%% Euclidean distance: The Euclidean distance between histograms calculates the
+		%% following distance between all histogram bins: $(b1 - b2)^2$, then sums this
+		%% over all bins and takes the square root.
+		%% \\ \\
+		%% Bhattacharyya distance: The Bhattacharyya distance is a measure to compare
+		%% statistical distributions, something that our histograms represent. The
+		%% Bhattacharyya distance is calculated as follows. First the Bhattacharyya
+		%% coefficient is determined by $\rho[p, q] = \int \sqrt{p(u) \cdot q(u) } \delta u$,
+		%% then the Bhattacharyya distance is determined from this by $d = \sqrt{1 - \rho[p, q]}$.
+		%%
+		%% LaTeX is the typesetting system, which has (amongst others) the two compilers
+		%% latex and pdflatex. The first one produces DVI output, the second has PDF as
+		%% output format. latex only accepts PS/EPS files for graphics inclusion. pdflatex
+		%% accepts JPG, PNG and finally PDF format.
+	%	\begin{figure}[H]
+	%		\begin{center}
+	%			\includegraphics[width=8cm]{img/cs_HSV.jpg}
+	%			\includegraphics[width=8cm]{img/cs_Hue.jpg}
+	%			\includegraphics[width=8cm]{img/cs_nRGB.jpg}
+	%			\includegraphics[width=8cm]{img/cs_OCS.jpg}
+	%			\includegraphics[width=8cm]{img/cs_RGB.jpg}
+	%		\end{center}
+	%		\caption{}
+	%	\end{figure}
 
-	\section*{Evaluation and Results}
-		KOEN: If you think your tracker is finished, you can think about how to evaluate
-		the performance of your tracker. Further, you can think about the strong and
-		weak parts of your tracker, and propose possible improvements. If there is
-		enough time, you can implement one or more of your proposed improvements and
-		analyse the effect compared to the original tracker.
+	\section{Evaluation and Results}
+%% 		KOEN: If you think your tracker is finished, you can think about how to evaluate
+%% 		the performance of your tracker. Further, you can think about the strong and
+%% 		weak parts of your tracker, and propose possible improvements. If there is
+%% 		enough time, you can implement one or more of your proposed improvements and
+%% 		analyse the effect compared to the original tracker.
+%% 		\\ \\
+%% 		Once you think you completed the mean-shift tracker, it is time to test your
+%% 		implementations on videos from different domains and analyze the performance
+%% 		of different color spaces. What are the advantages and disadvantages of certain
+%% 		color spaces, when do you think you should use one color space instead of the
+%% 		other, etc. After that, you can think about improvements of the tracker. This
+%% 		involves a thorough analysis of your current version, including an analysis of
+%% 		the strong and weak points. If you know when your tracker goes wrong, you can
+%% 		think of possible solutions to overcome these difficulties.
+%% 		\\ \\
+%% 		However, first think about how to evaluate the performance of your tracker. It
+%% 		would be nice to show some quantitative results in your report, instead of pointing
+%% 		at the videos and stating ``Look, it works!''. Several options exist, some more
+%% 		time-consuming than others. Come talk to me if you have no clue on how to proceed
+%% 		with this.
+%% 		\\ \\
+%% 		If you finished your tracker, and thought about how to evaluate it, then it is
+%% 		tiime to test your tracker on videos from different domains. For this, you can
+%% 		use the Internet to download videos or capture your own. For the conversion of
+%% 		your videos into frames, I suggest you use the linux-program mplayer. Matlab can
+%% 		also handle video-files, but you will get memory problems if you use videos that
+%% 		are longer than a couple of seconds.
+%% 		\\ \\
+%% 		Note that the most important part is to implement the tracker in a correct way.
+%% 		After you made sure your implementation is correct, try the tracker on a video
+%% 		in a different domain (search on the internet to find a good video or create your
+%% 		own video). Keep in mind that when looking for a suitable video, the goal is not
+%% 		to show how good the tracker works, but try to put your finger on the strong and
+%% 		weak parts of the algorithm. After you analyzed these strong and weak points of
+%% 		the algorithm, try to come up with suggestions to improve your design. If there
+%% 		is still enough time, you can implement one or more of your suggestions and analyze
+%% 		the results (for instance, how does your improvement compare to the original algorithm
+%% 		with respect to the weak as well as the strong parts of the original algorithm). If
+%% 		you run out of time, you can describe how you would change the design and explain your
+%% 		expectations of this change. 
+		Evaluation of the tracker is not a trivial task where we are provided with a ground-truth
+		to use for measuring the performance of the tracker. Since we are interested in the various
+		pros and cons of the tracker we conducted experiments on several domains. For our experiments
+		we chose three different domains: sport, urban and nature. For each of these domains we use
+		two different environments within the domain and conduct a tracking experiment for each color
+		space described earlier. To test the robustness on these domains we do need some constraints
+		within the videos themselves. The most important constraint is that the target is not fully
+		occluded during tracking, since the tracker cannot handle this in our implementation. Another
+		important constraint to the videos is that there should not be any cuts to different cameras
+		in the movie when tracking the object. Since mean-shift tracks the object from frame to frame,
+		it cannot handle tracking objects that appear on totally different locations when having a cut
+		from camera to camera. A final constraint is that the object should not scale too much. The
+		tracker can deal with some scaling but the tracker patch does not grow or shrink when the object
+		gets scaled. The evaluation criterion is simple: for each video and for each color space, we test
+		whether it is possible to track a certain object for the entire sequence of frames.
+		\begin{table}[H]
+			\centering
+			\begin{tabular}{ | l | l | l | l | l | l |}
+			\hline
+			                   & RGB & rgb & OCS & HSV & Hue \\
+			\hline
+			Formula 1 (1):  97 & 1   & 1   & 0   & 0   & 1 \\
+			Formula 1 (2): 215 & 1   & 0   & 0   & 0   & 0 \\
+			Formula 1 (3): 123 & 0   & 0   & 0   & 0   & 1 \\
+			Formula 1 (4): 222 & 0   & 0   & 0   & 0   & 1 \\
+			Formula 1 (5): 164 & 1   & 0   & 0   & 1   & 1 \\
+			\hline
+			\end{tabular}
+			\caption{}
+		\end{table}
+		\begin{table}[H]
+			\centering
+			\begin{tabular}{ | l | l | l | l | l | l |}
+			\hline
+			                   & RGB & rgb & OCS & HSV & Hue \\
+			\hline
+			Soccer (1): 201    & 1   & 1   & 0   & 1   & 1 \\
+			Soccer (2): 164    & 1   & 1   & 0   & 1   & 1 \\
+			Soccer (3): 223    & 0   & 0   & 0   & 1   & 1 \\
+			Soccer (4): 186    & 0   & 0   & 0   & 0   & 0 \\
+			Soccer (5): 239    & 0   & 0   & 0   & 0   & 0 \\
+			\hline
+			\end{tabular}
+			\caption{}
+		\end{table}
+		\noindent
+		The sporting domain gives us a more controlled environment for tracking. Formula $1$ is set on
+		grey roads with green grass surrounding it, making it possible to track racecars with certain
+		color schemes fairly easy. Tracking in the soccer domain also benefits from the environment of
+		the players and their clothing. However, the controlled environment can also be of negative
+		influence. For example, when tracking a Formula 1 car we observe that using only the hue gives
+		the best tracking results in general. But when the target model consists of average hue values
+		relative to the environment the tracker will not always be able to FIXME END OF SENTENCE?
 		\\ \\
-		Once you think you completed the mean-shift tracker, it is time to test your
-		implementations on videos from different domains and analyze the performance
-		of different color spaces. What are the advantages and disadvantages of certain
-		color spaces, when do you think you should use one color space instead of the
-		other, etc. After that, you can think about improvements of the tracker. This
-		involves a thorough analysis of your current version, including an analysis of
-		the strong and weak points. If you know when your tracker goes wrong, you can
-		think of possible solutions to overcome these difficulties.
-		\\ \\
-		However, first think about how to evaluate the performance of your tracker. It
-		would be nice to show some quantitative results in your report, instead of pointing
-		at the videos and stating ``Look, it works!''. Several options exist, some more
-		time-consuming than others. Come talk to me if you have no clue on how to proceed
-		with this.
-		\\ \\
-		If you finished your tracker, and thought about how to evaluate it, then it is
-		tiime to test your tracker on videos from different domains. For this, you can
-		use the Internet to download videos or capture your own. For the conversion of
-		your videos into frames, I suggest you use the linux-program mplayer. Matlab can
-		also handle video-files, but you will get memory problems if you use videos that
-		are longer than a couple of seconds.
-		\\ \\
-		Note that the most important part is to implement the tracker in a correct way.
-		After you made sure your implementation is correct, try the tracker on a video
-		in a different domain (search on the internet to find a good video or create your
-		own video). Keep in mind that when looking for a suitable video, the goal is not
-		to show how good the tracker works, but try to put your finger on the strong and
-		weak parts of the algorithm. After you analyzed these strong and weak points of
-		the algorithm, try to come up with suggestions to improve your design. If there
-		is still enough time, you can implement one or more of your suggestions and analyze
-		the results (for instance, how does your improvement compare to the original algorithm
-		with respect to the weak as well as the strong parts of the original algorithm). If
-		you run out of time, you can describe how you would change the design and explain your
-		expectations of this change. 
+		The urban domain gives a more challenging environment since we can expect about anything in the
+		scenery. For this domain we chose walking people and free-running people (an urban sport). Because
+		urban environments have a huge variety in features such as source illuminations, occlusion, clutter
+		and reflecting surfaces, the tracking results are much more dependent on the color spaces.
+		\begin{table}[H]
+			\centering
+			\begin{tabular}{ | l | l | l | l | l | l |}
+			\hline
+			                            & RGB & rgb & OCS & HSV & Hue \\
+			\hline
+			Pedestrian-Walk    (1):  82 & 0   & 0   & 0   & 1   & 0 \\
+			Pedestrian-Walk    (2):  42 & 0   & 0   & 0   & 1   & 0 \\
+			Pedestrian-Walk    (3):  84 & 0   & 0   & 0   & 1   & 0 \\
+			Pedestrian-FreeRun (1): 174 & 0   & 0   & 1   & 0   & 1 \\
+			Pedestrian-FreeRun (2): 163 & 1   & 0   & 0   & 0   & 0 \\
+			Pedestrian-FreeRun (3): 387 & 0   & 0   & 0   & 0   & 0 \\
+			\hline
+			\end{tabular}
+			\caption{}
+		\end{table}
+		\begin{table}[H]
+			\centering
+			\begin{tabular}{ | l | l | l | l | l | l |}
+			\hline
+			                   & RGB & rgb & OCS & HSV & Hue \\
+			\hline
+			Fish    (1): 314   & 0   & 0   & 0   & 0   & 0 \\
+			Fish    (2): 319   & 0   & 1   & 0   & 1   & 1 \\
+			Fish    (3): 322   & 1   & 1   & 1   & 1   & 1 \\
+			Leopard (1): 387   & 0   & 0   & 0   & 1   & 1 \\
+			Leopard (2):  91   & 0   & 0   & 0   & 1   & 0 \\
+			Leopard (3): 105   & 0   & 0   & 0   & 1   & 1 \\
+			\hline
+			\end{tabular}
+			\caption{}
+		\end{table}
+		\noindent
 
-	\section*{Conclusion}
+	\section{Conclusion}
+
+	\section{Future Work}
+		We have several suggestions for extending the tracker skeleton.
+
+		\begin{itemize}
+		\item{
+			\emph{Scale-invariance}: this could be accomplished by computing the
+			Epanechnikov kernel for various scales and selecting the appropriate
+			scale each frame by means of the Bhattacharyya distance.
+		}
+		\item{
+			\emph{Color-space selection}: it should be possible to perform some
+			variance analysis on the target histogram and determine which color
+			space is best suited for the object model.
+		}
+		\item{
+			\emph{Spatial discrimination}: dividing the kernel into several parts
+			to store spatial information could make the tracker more discriminative.
+		}
+		\end{itemize}
 
 	\begin{thebibliography}{2}
 		\bibitem{KBOT}
