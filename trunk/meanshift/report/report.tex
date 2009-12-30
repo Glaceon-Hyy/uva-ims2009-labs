@@ -103,7 +103,8 @@
 		now steer the tracker towards the object's most likely new position
 		by following the gradient rather than by examining all pixels within
 		the local environment. This new position is derived from the histogram
-		with smallest Bhattacharyya distance to the target's histogram representation.
+		whose Bhattacharyya distance to the target's histogram representation
+		is smallest.
 		\\ \\
 		%% The mean-shift tracker is a special case of the kernel-based tracker.
 		%% Instead of doing a brute force search of all surrounding pixels, a gradient
@@ -215,15 +216,14 @@
 		function and reducing the localization problem to a search in this function's
 		basin of attraction (ie., all points in the state-space that enter the same
 		region $R$ over time). The MST's object model is given by a histogram in some
-		color-space\footnote{We evaluate our tracker in RGB, rgb, HSV, and OSC for a
-		fixed number of bins per dimension at bin-width $16$.}. This is a non-parametric
-		color density estimate, extracted both for the target-object model (p.d.f) $q$
-		and for the per-frame target-object candidates $p(\tbf{v})$; where $\tbf{v} = (x, y)$.
-		The similarity function between histograms $p$ and $q$ is abstractly denoted by
-		$\rho[p(\tbf{v}), q]$. This function is regularized by applying an isotropic spatial
-		Epanechnikov kernel to the objects so that large variations in spectral information
-		for adjacent image pixels are suppressed and continuous spatial data is retained,
-		allowing gradient-based search methods to be deployed.
+		color-space. This is a non-parametric color density estimate, extracted both
+		for the target-object model (p.d.f) $q$ and for the per-frame target-object
+		candidates $p(\tbf{v})$; where $\tbf{v} = (x, y)$. The similarity function
+		between histograms $p$ and $q$ is abstractly denoted by $\rho[p(\tbf{v}), q]$.
+		This function is regularized by applying an isotropic spatial Epanechnikov kernel
+		to the objects so that large variations in spectral information for adjacent image
+		pixels are suppressed and continuous spatial data is retained, allowing the use of
+		gradient-based methods to search for its maxima.
 		\\ \\
 		The Bhattacharyya distance measures the similarity of two discrete or continuous
 		probability distributions. It is related to the Bhattacharyya coefficient, which
@@ -343,8 +343,19 @@
 			highlights, radiant intensity, object geometry and surface orientation,
 			and other properties. Very often the ``best''\footnote{In so far as this
 			can be objectively established.} color-space is also dependent on the
-			domain of interest. For example, when tracking soccer players, normalized
-			RGB-space BLABLA playing field BLABLA large diffuse surface.
+			domain of interest. For example, when tracking brightly-colored soccer
+			players moving across the field (a large diffuse grass surface), the
+			normalized-RGB system will be better capable of discriminating fore-
+			and background pixels than the RGB system from which it originates.
+			Figure \ref{fig:CORAL} illustrates this as well.
+			\\ \\
+			We evaluate our tracker in the \verb|RGB|, \verb|rgb|, \verb|HSV|, and
+			\verb|OSC| spaces. The object model is then a $2D$ (\verb|rgb|) or $3D$
+			(\verb|RGB|, \verb|HSV|, \verb|OSC|) histogram respectively. The number
+			of bins per histogram is not a function of the number of dimensions, ie.
+			each dimension contains $N^{\frac{1}{d}}$ bins ($d \in \{2, 3\}$) of width
+			$16$ where $N$ is the total bin-count. For a detailed overview of the various
+			color-spaces, we refer to \cite{COLOR}.
 
 		%% Histogram distances
 		%% To check the result you get from the object detection and to maybe choose
@@ -380,8 +391,10 @@
 			\caption{
 				Coral, represented in five different color-spaces. Top image:
 				RGB. Bottom image quadrant in clockwise order: HSV, Hue, OCS,
-				and rgb.
+				and rgb. The tropical fish in front of the reef is almost
+				invisible in OCS, yet clearly visible in HSV.
 			}
+			\label{fig:CORAL}
 		\end{figure}
 
 	\section{Evaluation and Results}
@@ -548,3 +561,26 @@
 	\end{thebibliography}
 
 \end{document}
+
+
+
+
+
+
+
+
+
+% je hebt een color space en zo'n domein als sport
+% waarom werkt normalized RGB zo fijn op voetbal
+%  Jasper:  en kan 't problemen opleveren bij een grijze achtergrond
+% met grijze achtergrond bedoel ik dan f1 wegdek
+%  Jasper:  en urban environments zijn erg lastig
+% daarom wil je over 't algemeen zoveel mogelijk informatie van de target model opslaan
+% daarom werken in die filmpjes hsv en RGB volgens mij 't beste
+%  me:  wat ik wel kan zeggen zijn dingen als "in domains where large diffuse surfaces dominate, normalized RGB works well because of blablabla"
+%  Jasper:  dat is zoiezo een inkoppertje
+% maar we moeten de zwaktes ook aanstippen dus
+%  me:  daar heb ik dus niet goed zicht op ;)
+%  Jasper:  en dan met name dus over zaken waar geen enkele color space iets mee kan
+% www.youtube.com/watch?v=_RviOAIqRyk
+% www.youtube.com/watch?v=qgdimzQaTG8
