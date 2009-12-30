@@ -1,4 +1,5 @@
 %% impart
+% cuts out part of the image based on a given center and a windowsize
 function part = impart( img, c, ws )
 	% img: the image
 	% s = distance from center

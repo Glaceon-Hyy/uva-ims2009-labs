@@ -1,4 +1,4 @@
-%% perform backprojection
+%% BackProjection
 function B = BackProjection(img, obj, bin, HistMethod)
 	img = (img + abs(min(img(:)))) / (abs(min(img(:))) + max(img(:)));
 	img = img*255;
@@ -6,10 +6,13 @@ function B = BackProjection(img, obj, bin, HistMethod)
 
     B = zeros(size(img,1),size(img,2));
     binsize = 256/bin;
+
     bin1 = ceil(double(img(:,:,1))/binsize);
     bin2 = ceil(double(img(:,:,2))/binsize);
     bin3 = ceil(double(img(:,:,3))/binsize);
     
+    
+    %% switch for case of 1, 2 or 3 dimensional histogram
 	switch HistMethod
 		case 1
 			for i=1:size(img,1)

@@ -1,7 +1,7 @@
-%% Kernel Based Hhistogram
-%% building a 3-dimensional histogram consisting of NxNxN bins using
-%% weights from kernel. The image patch should be normalized to the size of
-%% the kernel.
+%% Kernel Based Histogram
+% building a 3-dimensional histogram consisting of NxNxN bins using
+% weights from kernel. The image patch should be scaled to the size of
+% the kernel.
 function [H I] = KernelBasedHist(img, bin, center, winSize, kernel, method)
 	
 	img = impart(img, center, winSize);
@@ -22,11 +22,12 @@ function [H I] = KernelBasedHist(img, bin, center, winSize, kernel, method)
 	img = img*255;
 	img = img+1;
 	
-	%% 
+	%% for each instance in each channel calculate the bin it belongs to
 	bin1 = ceil(double(img(:,:,1))/binsize);
 	bin2 = ceil(double(img(:,:,2))/binsize);
 	bin3 = ceil(double(img(:,:,3))/binsize);
 	
+	%% switch for case of 1, 2 or 3 dimensional histogram
 	switch method
 		case 1
 			H = zeros(bin);

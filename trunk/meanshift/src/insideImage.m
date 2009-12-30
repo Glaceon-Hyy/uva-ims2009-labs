@@ -1,3 +1,5 @@
+%% insideImage
+% checks if a given window positioned at center is within the image
 function bool = insideImage( image, center, winSize )
 
 if center(2)-winSize(2) > 0 && center(1)-winSize(1) > 0 && ...
