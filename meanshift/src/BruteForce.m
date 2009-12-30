@@ -1,6 +1,3 @@
-%% FindBestFit
-% returns the position of a part of the image which has the closest
-% distance in histogram with histObj.
 %% Brute Force Algorithm:
 % widthArea = v1
 % heightArea = v2

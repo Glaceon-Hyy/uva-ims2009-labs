@@ -13,18 +13,15 @@ function newCenter = MeanShiftRec(TargetModel, img, oldCenter, winSize, bin, ker
 	
 	weights = BackProjection(TargetCanImg0, CombHist, bin, HistMethod);
 	
-% 	sum(TargetCanHist0(:))
-	
-	newCenter = [0 0];
 	
 	sizeWeights = size(weights);
 	searchWindow = ([size(weights,1)/2,size(weights,2)/2]);
 	
+	newCenter = [0 0];
 	%% calculate the new center: 
 	for i=1 : sizeWeights(1)
 		for j=1 : sizeWeights(2)
-			%% image positions are column-wise, matrix positions are
-			%% row-wise.
+			%% subtract 0.5 because the centering around 0			
 			pos = [j-searchWindow(2) i-searchWindow(1)]-0.5;
 			newCenter = newCenter + (pos.*weights(i,j));
 		end
@@ -63,7 +60,6 @@ function newCenter = MeanShiftRec(TargetModel, img, oldCenter, winSize, bin, ker
 % 	fprintf('Iter: %d, oldCenter: [%d %d], newCenter: [%d %d]\n', iter, oldCenter(1), oldCenter(2), newCenter(1), newCenter(2));
 % 	fprintf('Iter: %d, y0Dist: %d, y1Dist: %d\n', iter, y0Dist, y1Dist);
 	
-%{	
 	while y1Dist < y0Dist
 		newCenter = 0.5 * (oldCenter + newCenter);
 		
@@ -81,8 +77,7 @@ function newCenter = MeanShiftRec(TargetModel, img, oldCenter, winSize, bin, ker
 % 		fprintf('Iter: %d, oldCenter: [%d %d], newCenter: [%d %d]\n', iter, oldCenter(1), oldCenter(2), newCenter(1), newCenter(2));
 % 		fprintf('Iter: %d, y0Dist: %d, y1Dist: %d\n', iter, y0Dist, y1Dist);
 	end
-%}
-	if norm(newCenter - oldCenter) > 0 && iter < 4
+	if norm(newCenter - oldCenter) > 0 && iter < 5
 		newCenter = MeanShiftRec(TargetModel, img, newCenter, winSize, bin, kernel, HistMethod, iter+1, verbose);
 	end
 

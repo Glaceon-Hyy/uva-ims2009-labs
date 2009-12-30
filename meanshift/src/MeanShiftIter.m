@@ -16,9 +16,11 @@ function newCenter = MeanShiftIter(TargetModel, img, oldCenter, winSize, bin, ke
 		sizeWeights = size(weights);
 		searchWindow = ([size(weights,1)/2,size(weights,2)/2]);
 
+		%% calculate the new center: 
 		newCenter = [0 0];
 		for i=1 : sizeWeights(1)
 			for j=1 : sizeWeights(2)
+				%% subtract 0.5 because the centering around 0
 				pos = [j-searchWindow(2) i-searchWindow(1)]-0.5;
 				newCenter = newCenter + (pos.*weights(i,j));
 			end
@@ -70,7 +72,7 @@ function newCenter = MeanShiftIter(TargetModel, img, oldCenter, winSize, bin, ke
 			fprintf('Iter: %d, y0Dist: %d, y1Dist: %d\n', iter, y0Dist, y1Dist);
 		end
 %}
-		if norm(newCenter - oldCenter) > 0 && iter < 4
+		if norm(newCenter - oldCenter) > 0 && iter < 5
 			oldCenter = newCenter;
 			iter = iter + 1;
 		else 
