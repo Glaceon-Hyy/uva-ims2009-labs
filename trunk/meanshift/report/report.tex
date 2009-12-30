@@ -248,20 +248,19 @@
 
 
 	\section{Implementation}
-		We implement the Epanechnikov weight-function by pre-calculating a 2D
-		table of kernel values equal in size to the target region, which stores
-		the weight for each relative pixel position. We add the weight per pixel
-		to the corresponding histogram bin via a single lookup into this table.
-		NOTE: DOES THE CODE ACTUALLY DO THIS?
+		The core of the implementation of the tracker follows the algorithm described in \cite{KBOT} closely, but with some small changes. 
 		\\ \\
-		Since caching all the frames of our animation test-sequences prior to
-		tracking would cost a prohibitive amount of memory, we read each frame
-		incrementally from disk on an as-needed basis. However, this reduces
-		performance. Ideally, for any given frame number, we would pre-load the
-		next $n$ frames in a separate thread, but \verb|MATLAB| provides no such
-		facilities.
+		The target model is represented by a kernel-weighted histogram. We implement the Epanechnikov weight-function by pre-calculating a 2D table of kernel values equal in size to the target region which stores the weight for each relative pixel position. We add the weight per pixel to the corresponding histogram bin via a single lookup into this table. The target region is scaled to unit height and width as well as any future candidate region, therefore the kernel needs to be calculated only once beforehand. 
 		\\ \\
-		A pseudo-code global overview of the tracker is included below.
+		The weights needed to calculate the eventual shift are given by equation (10) from \cite{KBOT} and can be calculated at once using a back projection approach. By calculating $H=\sqrt{\frac{M}{H_0}}$, where $M$ is the target model and $H_0$ is the candidate histogram, the weights are stored in a histogram. Now it is possible to use back projection on this new histogram $H$ and the image patch $P_0$ to set the corresponding weight for every pixel in the image patch by using the histogram $H$ as a lookup table.
+		\\ \\
+		With the weights calculated, the shift from the current position to a new position is derived by summing over the products of the positions relative from the center of the image patch and their corresponding weights (line 18 in algorithm \ref{alg:MST}). This shift however can be too large, and the new position can pass the real position of the object. A method to deal with large shifts is to iteratively reduce the distance between the old position and the new position by a factor of $\frac{1}{2}$ until the condition $\rho_{H_1} < \rho_{H_0}$ is met, where $\rho_{H_x}$ is the Bhattacharyya distance between the target candidate histogram $H_x$ and the target model $M$.
+		\\ \\
+		The final step in the implementation is the acceptation or rejection of the new position with respect to the old position. In our implementation we set the condition to the norm of the new minus the old position to be zero in order to accept the new position. If this is not the case, the new position is used in a recursive call to the MeanShiftRecursive function. The depth of recursion is constrained to a maximum of 4 steps to keep reasonable speed and in practice it turns out that this depth gives good results.
+		\\ \\
+		Since caching all the frames of our animation test-sequences prior to tracking would cost a prohibitive amount of memory, we read each frame incrementally from disk on an as-needed basis. However, this reduces performance. Ideally, for any given frame number, we would pre-load the	next $n$ frames in a separate thread, but \verb|MATLAB| provides no such	facilities.
+		\\ \\
+		A pseudo-code global overview of the tracker is included in algorithm \ref{alg:MST}.
 		\subsection{Algorithm}
 			\begin{algorithm}[H]
 				\caption{Mean-shift Tracker}
@@ -297,6 +296,8 @@
 				
 				\IF {$\parallel newCenter - center \parallel > 0$ or $Iter<4$}
 					\STATE $newCenter \leftarrow$ MeanShiftRecursive($M$,$d$,$newCenter$,$K$, $Iter+1$)
+				\ELSE
+					\STATE \tbf{return} $newCenter$
 				\ENDIF			
 				\end{algorithmic}
 				\label{alg:MST}
