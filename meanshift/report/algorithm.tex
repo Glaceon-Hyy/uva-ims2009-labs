@@ -1,0 +1,64 @@
+\documentclass[a4paper,11pt]{article}
+
+\title{Intelligent Multimedia Systems\\Mean-Shift Object Tracking}
+\author{J. v. Turnhout (0312649) \& R. Tobi (0448710)}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+\newcommand{\tbf}{\textbf}
+\newcommand{\tit}{\textit}
+\newcommand{\ds}{\displaystyle}
+\newcommand{\argmax}{\operatornamewithlimits{argmax}}
+
+
+
+\begin{document}
+	\maketitle
+	
+	\section*{Algorithm}
+		\begin{algorithm}
+			\caption{Mean-shift Tracker}
+			\begin{algorithmic}[1]
+			
+			\STATE {\tbf{function} MeanShift\_Tracker($D$,$M$)}
+			\STATE {$D$ = Image Sequence}
+			\STATE {$M$ = Target Model}
+			\medskip
+			\STATE {$K \leftarrow$ Epanechnikov Kernel}
+			\STATE {$center \leftarrow$ Starting Position}
+			\FOR {$d \epsilon D$}
+				\STATE {DrawRectangle($d$,$center$)}
+				\STATE {$center \leftarrow$ MeanShiftRecursive($M$,$d$,$center$,$K$, $0$)}
+			\ENDFOR
+			\medskip
+			\STATE {\tbf{function} MeanShift\_Recursive($M$,$d$,$center$,$K$, $Iter$)}
+			\STATE $P_x$ = Candidate Image Patch $x$
+			\STATE $H_x$ = Candidate Histogram $x$
+			\STATE $x_i$ = pixel-location in image patch relative to the center
+			\STATE $\rho_{H_x} = \sqrt{H_x \cdot M}$
+			\medskip
+			\STATE $H_0 \leftarrow$ Histogram($d$,$center$,$K$)
+			\STATE $P_0 \leftarrow$ ImagePart($d$, $center$)
+			\STATE $\tbf{w} \leftarrow$ BackProjection($P_0$, $\sqrt{\frac{M}{H_0}}$)
+			\STATE $newCenter \leftarrow \frac{\sum_i^n x_iw_i}{\sum_i^n w_i} + center$
+			\STATE $H_1 \leftarrow$ Histogram($d$,$newCenter$,$K$)
+			\WHILE{$\rho_{H_1} < \rho_{H_0}$}
+				\STATE $newCenter = \frac{1}{2} \cdot (center + newCenter)$
+				\STATE evaluate $\rho_{H_1}$
+			\ENDWHILE
+			
+			
+			\IF {$\parallel newCenter - center \parallel > 0$ or $Iter<4$}
+				\STATE $newCenter \leftarrow$ MeanShiftRecursive($M$,$d$,$newCenter$,$K$, $Iter+1$)
+			\ENDIF			
+			\end{algorithmic}
+			\label{alg:PCYK}
+		\end{algorithm}
+		
+	
+\end{document}
