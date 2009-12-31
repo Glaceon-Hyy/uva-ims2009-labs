@@ -161,19 +161,18 @@
 		With the weights calculated, the shift from the current position to a new position
 		is derived by summing over the products of the positions relative from the center
 		of the image patch and their corresponding weights (line 18 in algorithm \ref{alg:MST}).
-		This shift however can be too large, and the new position can pass the real position
+		This shift however can be too large, and the new position can exceed the real position
 		of the object. A method to deal with large shifts is to iteratively reduce the distance
 		between the old position and the new position by a factor of $\frac{1}{2}$ until the
-		condition $\rho_{H_1} < \rho_{H_0}$ is met, where $\rho_{H_x}$ is the Bhattacharyya
+		condition $\rho[H_1, M] < \rho[H_0,M]$ is met, where $\rho[H_x, M]$ is the Bhattacharyya
 		distance between the target candidate histogram $H_x$ and the target model $M$.
 		\\ \\
 		The final step in the implementation is the acceptation or rejection of the new
 		position with respect to the old position. In our implementation we set the condition
-		to the norm of the new minus the old position to be zero in order to accept the new
-		position. If this is not the case, the new position is used in a recursive call to
-		the \verb|MeanShiftRecursive| function. The depth of recursion is constrained to a
-		maximum of $4$ steps to keep reasonable speed and in practice this depth gives good
-		results.
+		to $\parallel newCenter - center \parallel > 0$ in order to reject the new
+		position. If this is the case, the new position is used in a recursive call to
+		the \verb|MeanShiftRecursive| function. If the condition fails, the method returns the new position.
+		The depth of recursion is constrained to a maximum of $4$ steps to keep reasonable speed and in practice this depth gives good results.
 		\\ \\
 		Since caching all the frames of our animation test-sequences prior to
 		tracking would cost a prohibitive amount of memory, we read each frame
@@ -183,14 +182,13 @@
 		facilities.
 		\\ \\
 		A pseudo-code global overview of the tracker is included below.
-		\subsection{Algorithm}
 			\begin{algorithm}[H]
 				\caption{Mean-shift Tracker}
 				\begin{algorithmic}[1]
 
 				\STATE {\tbf{function} MeanShift\_Tracker($D$,$M$)}
-				\STATE {$D$ = Image Sequence}
-				\STATE {$M$ = Target Model}
+				\STATE {\% $D$ = Image Sequence}
+				\STATE {\% $M$ = Target Model}
 				\medskip
 				\STATE {$K \leftarrow$ Epanechnikov Kernel}
 				\STATE {$center \leftarrow$ Starting Position}
@@ -200,19 +198,19 @@
 				\ENDFOR
 				\medskip
 				\STATE {\tbf{function} MeanShift\_Recursive($M$,$d$,$center$,$K$, $Iter$)}
-				\STATE $P_x$ = Candidate Image Patch $x$
-				\STATE $H_x$ = Candidate Histogram $x$
-				\STATE $x_i$ = pixel-location in image patch relative to the center
-				\STATE $\rho_{H_x} = \sqrt{H_x \cdot M}$
+				\STATE \% $P_x$ = Candidate Image Patch $x$
+				\STATE \% $H_x$ = Candidate Histogram $x$
+				\STATE \% $x_i$ = pixel-location in image patch relative to the center
+				\STATE \% $\rho[H_x, M] = \sqrt{H_x \cdot M}$
 				\medskip
 				\STATE $H_0 \leftarrow$ Histogram($d$,$center$,$K$)
 				\STATE $P_0 \leftarrow$ ImagePart($d$, $center$)
 				\STATE $\tbf{w} \leftarrow$ BackProjection($P_0$, $\sqrt{\frac{M}{H_0}}$)
 				\STATE $newCenter \leftarrow \frac{\sum_i^n x_iw_i}{\sum_i^n w_i} + center$
 				\STATE $H_1 \leftarrow$ Histogram($d$,$newCenter$,$K$)
-				\WHILE{$\rho_{H_1} < \rho_{H_0}$}
+				\WHILE{$\rho[H_1, M] < \rho[H_0, M]$}
 					\STATE $newCenter = \frac{1}{2} \cdot (center + newCenter)$
-					\STATE evaluate $\rho_{H_1}$
+					\STATE evaluate $\rho[H_1, M]$ with $newCenter$
 				\ENDWHILE
 
 				\IF {$\parallel newCenter - center \parallel > 0$ or $Iter<4$}
@@ -239,11 +237,7 @@
 			\\ \\
 			We evaluate our tracker in the \verb|RGB|, \verb|rgb|, \verb|HSV|, and
 			\verb|OCS| spaces. The object model is then a $2D$ (\verb|rgb|) or $3D$
-			(\verb|RGB|, \verb|HSV|, \verb|OCS|) histogram respectively. The number
-			of bins per histogram is not a function of the number of dimensions, ie.
-			each dimension contains $N^{\frac{1}{d}}$ bins ($d \in \{2, 3\}$) of width
-			$16$ where $N$ is the total bin-count. For a detailed overview of the various
-			color-spaces, we refer to \cite{COLOR}.
+			(\verb|RGB|, \verb|HSV|, \verb|OCS|) histogram respectively. We also use the \verb|hue| component from the \verb|HSV| space alone, giving a $1D$ histogram. The number of bins per histogram is not a function of the number of dimensions, ie.	each dimension contains $N^{\frac{1}{d}}$ bins ($d \in \{2, 3\}$) of width	$16$ where $N$ is the total bin-count. For a detailed overview of the various color-spaces, we refer to \cite{COLOR}.
 
 		%% Histogram distances
 		%% To check the result you get from the object detection and to maybe choose
@@ -310,25 +304,19 @@
 		two different environments within the domain and conduct a tracking experiment for each color
 		space described earlier. To test the robustness on these domains we do need some constraints
 		within the videos themselves. The most important constraint is that the target is not fully
-		occluded during tracking, since the tracker cannot handle this properly in our implementation.
-		Another important constraint to the videos is that there should not be any cuts to different
-		cameras in the movie when tracking the object. Since mean-shift tracks the object from frame
-		to frame, it cannot handle tracking objects that appear in totally different locations due
-		to such cuts. A final constraint is that the object should not scale too much. The tracker
-		can deal with some scaling but the tracker patch does not grow or shrink when the object gets
-		scaled. The evaluation criterion is simple: for each video and for each color-space, we test
-		whether it is possible to track a certain object for the entire sequence of frames.
+		occluded during tracking over a sequence of many frames, since the tracker cannot handle this properly in our implementation.	Another important constraint to the videos is that there should not be any cuts to different cameras in the movie when tracking the object. Since mean-shift tracks the object from frame to frame, it cannot handle tracking objects that appear in totally different locations due		to such cuts. A final constraint is that the object should not scale too much. The tracker can deal with some scaling but the tracker patch does not grow or shrink when the object gets scaled. The evaluation criterion is simple: for each video and for each color-space, we test whether it is possible to track a certain object for the entire sequence of frames, and measure performance by observing in what frame MST looses track of the object if it is the case. The performance of the tracker is then given by $\frac{f}{F}$, where $f$ is the frame-number and $F$ is the total number of frames.
+		
 		\begin{table}[H]
 			\centering
 			\begin{tabular}{| l | l | l | l | l | l | l |}
 			\hline
 			              & frames & RGB & rgb & OCS & HSV & Hue \\
 			\hline
-			Formula 1 (1) &  97    & 1   & 1   & 0   & 0   & 1 \\
-			Formula 1 (2) & 215    & 1   & 0   & 0   & 0   & 0 \\
-			Formula 1 (3) & 123    & 0   & 0   & 0   & 0   & 1 \\
-			Formula 1 (4) & 222    & 0   & 0   & 0   & 0   & 1 \\
-			Formula 1 (5) & 164    & 1   & 0   & 0   & 1   & 1 \\
+			Formula 1 (1) &  97    & 1.0   & 1.0  & 0.56 & 1.0  & 1.0  \\
+			Formula 1 (2) & 215    & 1.0   & 0.14 & 1.0  & 0.40 & 0.35 \\
+			Formula 1 (3) & 123    & 0.57  & 0.64 & 0.54 & 0.56 & 1.0  \\
+			Formula 1 (4) & 222    & 0.15  & 0.65 & 0.13 & 0.11 & 1.0  \\
+			Formula 1 (5) & 164    & 1.0   & 0.15 & 0.48 & 1.0  & 1.0  \\
 			\hline
 			\end{tabular}
 			\caption{Formula-One results}
@@ -340,11 +328,11 @@
 			\hline
 			          & frames & RGB & rgb & OCS & HSV & Hue \\
 			\hline
-			Soccer (1)& 201    & 1   & 1   & 0   & 1   & 1 \\
-			Soccer (2)& 164    & 1   & 1   & 0   & 1   & 1 \\
-			Soccer (3)& 223    & 0   & 0   & 0   & 1   & 1 \\
-			Soccer (4)& 186    & 0   & 0   & 0   & 0   & 0 \\
-			Soccer (5)& 239    & 0   & 0   & 0   & 0   & 0 \\
+			Soccer (1)& 201    & 1.0  & 1.0  & 0.10 & 1.0  & 1.0  \\
+			Soccer (2)& 164    & 1.0  & 1.0  & 0.12 & 1.0  & 1.0  \\
+			Soccer (3)& 223    & 0.23 & 1.0  & 1.0  & 1.0  & 1.0  \\
+			Soccer (4)& 186    & 0.92 & 0.17 & 0.93 & 0.18 & 0.52 \\
+			Soccer (5)& 239    & 0.5  & 0.02 & 0.07 & 0.06 & 0.05 \\
 			\hline
 			\end{tabular}
 			\caption{Soccer results}
@@ -355,13 +343,13 @@
 		grey roads with green grass surrounding it, making it possible to track racecars with certain
 		color schemes fairly easy. Tracking in the soccer domain also benefits from the environment of
 		the players and their clothing. However, the controlled environment can also be of negative
-		influence. For example, when tracking a Formula-One car we observe that using only the hue gives
+		influence. For example, when tracking for a sport domain we observe that using only the hue gives
 		the best tracking results in general. But problems are encountered when using hue if the target
 		model consists of white-like colors. Because of complications in illumination or video compression,
 		these white-like colors can contain colors from their surroundings therefore giving them hue-values
 		closer to the surrounding colors. This can result in objects completely dissapearing in the hue channel
 		as shown in figure \ref{fig:HUE}. The usage of all three components from HSV can solve some of these
-		issues as more information is preserved.
+		issues as more information is preserved. Another big problem occurs when objects with similar colored clothing occlude each other as happened in the Soccer (4) sequence. The lack of high-level semantics make it impossible to discriminate between such two occluding objects using the gradient.
 		\begin{figure}[H]
 			\begin{center}
 				\includegraphics[width=5cm]{img/example_hue1.eps}
@@ -410,12 +398,12 @@
 			\hline
 			                     & frames & RGB & rgb & OCS & HSV & Hue \\
 			\hline
-			Pedestrian-Walk    (1)&  82 & 0   & 0   & 0   & 1   & 0 \\
-			Pedestrian-Walk    (2)&  42 & 0   & 0   & 0   & 1   & 0 \\
-			Pedestrian-Walk    (3)&  84 & 0   & 0   & 0   & 1   & 0 \\
-			Pedestrian-FreeRun (1)& 174 & 0   & 0   & 1   & 0   & 1 \\
-			Pedestrian-FreeRun (2)& 163 & 1   & 0   & 0   & 0   & 0 \\
-			Pedestrian-FreeRun (3)& 387 & 0   & 0   & 0   & 0   & 0 \\
+			Pedestrian-Walk    (1)&  82 & 0.12 & 0.42 & 0.23 & 1.0  & 0.31 \\
+			Pedestrian-Walk    (2)&  42 & 1.0  & 0.03 & 1.0  & 1.0  & 0.95 \\
+			Pedestrian-Walk    (3)&  84 & 1.0  & 0.04 & 1.0  & 1.0  & 0.82 \\
+			Pedestrian-FreeRun (1)& 174 & 0.04 & 0.04 & 1.0  & 0.08 & 1.0  \\
+			Pedestrian-FreeRun (2)& 163 & 1.0  & 0.34 & 1.0  & 0.33 & 0.25 \\
+			Pedestrian-FreeRun (3)& 387 & 0.30 & 0.02 & 0.28 & 1.0 & 0.15 \\
 			\hline
 			\end{tabular}
 			\caption{Urban-Environment results}
@@ -425,24 +413,21 @@
 		Our final domain of nature is also a domain with a huge variety of features similar to
 		those of the urban environment where we chose hunting cheetahs and fishes in coral to
 		run experiments on. The best performing color-system in this domain is HSV. The Fish (1)
-		sequence failed for all color-spaces because of the coral being camouflage for the type
+		sequence failed for some color-spaces because of the coral being camouflage for the type
 		of fish, and the other fish sequences performed very well because of the distinctive color
-		the fish has. The running cheetah was also camouflaged by its environment. But with the
-		target model consisting of few features of the cheetah (black spots and some white fur),
-		without the interference of shadows or lightspots it could be tracked using the HSV color
-		space. See figure \ref{fig:RESULTS} for final results of the tracker. 
+		the fish has with respect to the coral. The running cheetah was also camouflaged by its environment. But with the target model consisting of few features of the cheetah (black spots and some white fur),		without the interference of shadows or lightspots it could be tracked using the HSV color space. See figure \ref{fig:RESULTS} for final results of the tracker. 
 		\begin{table}[H]
 			\centering
 			\begin{tabular}{ | l | l | l | l | l | l | l |}
 			\hline
 			           & frames & RGB & rgb & OCS & HSV & Hue \\
 			\hline
-			Fish    (1)& 314   & 0   & 0   & 0   & 0   & 0 \\
-			Fish    (2)& 319   & 0   & 1   & 0   & 1   & 1 \\
-			Fish    (3)& 322   & 1   & 1   & 1   & 1   & 1 \\
-			Cheetah (1)& 387   & 0   & 0   & 0   & 1   & 1 \\
-			Cheetah (2)&  91   & 0   & 0   & 0   & 1   & 0 \\
-			Cheetah (3)& 105   & 0   & 0   & 0   & 1   & 1 \\
+			Fish    (1)& 614   & 0.08 & 1.0  & 1.0  & 0.12 & 0.04 \\
+			Fish    (2)& 319   & 0.33 & 1.0  & 0.82 & 1.0  & 1.0 \\
+			Fish    (3)& 322   & 1.0  & 1.0  & 1.0  & 1.0  & 1.0 \\
+			Cheetah (1)& 387   & 0.74 & 0.70 & 0.68 & 1.0  & 1.0 \\
+			Cheetah (2)&  91   & 0.20 & 0.18 & 0.19 & 1.0  & 0.23 \\
+			Cheetah (3)& 105   & 0.13 & 0.16 & 0.09 & 1.0  & 1.0 \\
 			\hline
 			\end{tabular}
 			\caption{Nature-Environment results}

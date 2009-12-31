@@ -49,7 +49,7 @@ function main(colorSpace, histMethod, bin, trackingType, directory, record, verb
     close all;
 
 	if record
-		mov = avifile('walk2.avi');
+		mov = avifile('walk33.avi');
 	end
 
 			
@@ -133,7 +133,7 @@ function main(colorSpace, histMethod, bin, trackingType, directory, record, verb
 		img = imfilter(img,PSF,'symmetric','conv');
 		
 		
-		fprintf('Processing %s\n', [directory images(i).name]);
+		fprintf('Processing %s\n Frame: %d\n', [directory images(i).name], i);
 		switch colorSpace
 			case 0
 				%% keep RGB
