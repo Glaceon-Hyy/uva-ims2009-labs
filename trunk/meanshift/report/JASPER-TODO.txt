@@ -12,26 +12,4 @@ put them somewhere in your web site (public_html) and the link to me.
 verder alleen de code en de compiled report.pdf submitten, de zooi
 in report/ niet :)
 
-
-
-%% LaTeX is the typesetting system, which has (amongst others) the two compilers
-%% latex and pdflatex. The first one produces DVI output, the second has PDF as
-%% output format. latex only accepts PS/EPS files for graphics inclusion. pdflatex
-%% accepts JPG, PNG and finally PDF format.
-
-% je hebt een color space en zo'n domein als sport
-% waarom werkt normalized RGB zo fijn op voetbal
-% en kan 't problemen opleveren bij een grijze achtergrond
-% met grijze achtergrond bedoel ik dan F1 wegdek
-% en urban environments zijn erg lastig
-% daarom wil je over 't algemeen zoveel mogelijk informatie van de target model opslaan
-% daarom werken in die filmpjes hsv en RGB volgens mij 't beste
-% "in domains where large diffuse surfaces dominate, normalized RGB works well because of blablabla"
-% maar we moeten de zwaktes ook aanstippen dus
-% daar heb ik dus niet goed zicht op ;)
-% en dan met name dus over zaken waar geen enkele color space iets mee kan
-%
-%
-% door allerlei zaken als codering, lichtval etc. zal wit in filmpjes niet als wit voorkomen
-% maar in t geval van voetbal als groen-wittig; daarom ligt de hue van t veld en het tenue
-% dicht bij elkaar en faalt hue op wit
+spreek je ergens in 2010 wel weer!
