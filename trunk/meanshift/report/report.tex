@@ -455,33 +455,35 @@
 		whether it is possible to track a certain object for the entire sequence of frames.
 		\begin{table}[H]
 			\centering
-			\begin{tabular}{ | l | l | l | l | l | l |}
+			\begin{tabular}{| l | l | l | l | l | l | l |}
 			\hline
-			                   & RGB & rgb & OCS & HSV & Hue \\
+			             & frames & RGB & rgb & OCS & HSV & Hue \\
 			\hline
-			Formula 1 (1):  97 & 1   & 1   & 0   & 0   & 1 \\
-			Formula 1 (2): 215 & 1   & 0   & 0   & 0   & 0 \\
-			Formula 1 (3): 123 & 0   & 0   & 0   & 0   & 1 \\
-			Formula 1 (4): 222 & 0   & 0   & 0   & 0   & 1 \\
-			Formula 1 (5): 164 & 1   & 0   & 0   & 1   & 1 \\
+			Formula 1 (1)&  97 & 1   & 1   & 0   & 0   & 1 \\
+			Formula 1 (2)& 215 & 1   & 0   & 0   & 0   & 0 \\
+			Formula 1 (3)& 123 & 0   & 0   & 0   & 0   & 1 \\
+			Formula 1 (4)& 222 & 0   & 0   & 0   & 0   & 1 \\
+			Formula 1 (5)& 164 & 1   & 0   & 0   & 1   & 1 \\
 			\hline
 			\end{tabular}
-			\caption{}
+			\caption{Formula one results}
+			\label{table:f1}
 		\end{table}
 		\begin{table}[H]
 			\centering
-			\begin{tabular}{ | l | l | l | l | l | l |}
+			\begin{tabular}{| l | l | l | l | l | l | l |}
 			\hline
-			                   & RGB & rgb & OCS & HSV & Hue \\
+			          & frames & RGB & rgb & OCS & HSV & Hue \\
 			\hline
-			Soccer (1): 201    & 1   & 1   & 0   & 1   & 1 \\
-			Soccer (2): 164    & 1   & 1   & 0   & 1   & 1 \\
-			Soccer (3): 223    & 0   & 0   & 0   & 1   & 1 \\
-			Soccer (4): 186    & 0   & 0   & 0   & 0   & 0 \\
-			Soccer (5): 239    & 0   & 0   & 0   & 0   & 0 \\
+			Soccer (1)& 201    & 1   & 1   & 0   & 1   & 1 \\
+			Soccer (2)& 164    & 1   & 1   & 0   & 1   & 1 \\
+			Soccer (3)& 223    & 0   & 0   & 0   & 1   & 1 \\
+			Soccer (4)& 186    & 0   & 0   & 0   & 0   & 0 \\
+			Soccer (5)& 239    & 0   & 0   & 0   & 0   & 0 \\
 			\hline
 			\end{tabular}
-			\caption{}
+			\caption{Soccer results}
+			\label{table:soc}
 		\end{table}
 		\noindent
 		The sporting domain gives us a more controlled environment for tracking. Formula $1$ is set on
@@ -489,50 +491,88 @@
 		color schemes fairly easy. Tracking in the soccer domain also benefits from the environment of
 		the players and their clothing. However, the controlled environment can also be of negative
 		influence. For example, when tracking a Formula 1 car we observe that using only the hue gives
-		the best tracking results in general. But when the target model consists of average hue values
-		relative to the environment the tracker will not always be able to FIXME END OF SENTENCE?
-		\\ \\
+		the best tracking results in general. But problems are encountered when using hue if the target model consists of white-like colors. Because of complications in illumination or video compression, these white-like colors can contain colors from their surroundings therefore giving them hue-values closer to the surrounding colors. This can result in objects completely dissapearing in the hue channel as shown in figure \ref{fig:HUE}. The usage of all three components from HSV can solve some of these issues as more information is preserved.
+		\begin{figure}[H]
+			\begin{center}
+				\includegraphics[width=5cm]{img/example_hue1.eps}
+				\includegraphics[width=5cm]{img/example_hue2.eps}\\
+			\end{center}
+			\caption{Example of the weaknes of hue: white players dissapear in hue channel}
+			\label{fig:HUE}
+		\end{figure}
+				
 		The urban domain gives a more challenging environment since we can expect about anything in the
-		scenery. For this domain we chose walking people and free-running people (an urban sport). Because
-		urban environments have a huge variety in features such as source illuminations, occlusion, clutter
-		and reflecting surfaces, the tracking results are much more dependent on the color spaces.
+		scenery. Illumination, shadow, clutter and about any color is present, as well as spatial issues like occlusion and changing appearances. For this domain we chose walking people and free-running people (an urban sport). Because of the huge variety in features the tracking results are much more dependent on the color spaces. In table \ref{table:ped} results on the urban environment are listed. We observe that for every sequence of frames, the tracking could only succeed for a single (or at most two) color space(s). The usage of full color spaces instead of only one component for hue or two components for normalized rgb is to be expected since they preserve more information on the target model. A particularly challenging problem was found in the experiment of the Pedestrian-Walk (1) sequence. The person walks in front of glass windows with high reflectance and a pile of stones of all kinds of colors. This resulted in the tracker getting lost most of the time for all color spaces because the window and the pile of stones contain all colors of the target model. The only way to solve this in our implementation is to be very precise when selecting a target model. Another interesting observation and a perfect example for the importance of color-space selection was made on the Pedestrian-FreeRun (1) sequence. Here, 3 out of 5 color spaces failed immediatly, and the hue had issues keeping track of the movement of the freerunner. The OCS color space however worked perfectly because of the clothing of the person (see figure \ref{fig:FREE}). 
+		\begin{figure}[H]
+			\begin{center}
+				\includegraphics[width=5cm]{img/example_free1.eps}
+				\includegraphics[width=5cm]{img/example_free2.eps}
+				\includegraphics[width=5cm]{img/example_free3.eps}\\
+			\end{center}
+			\caption{Example of color-space selection. From left to right, top to bottom: RGB, OCS and hue}
+			\label{fig:FREE}
+		\end{figure}
+		
 		\begin{table}[H]
 			\centering
-			\begin{tabular}{ | l | l | l | l | l | l |}
+			\begin{tabular}{ | l | l | l | l | l | l | l |}
 			\hline
-			                            & RGB & rgb & OCS & HSV & Hue \\
+			                     & frames & RGB & rgb & OCS & HSV & Hue \\
 			\hline
-			Pedestrian-Walk    (1):  82 & 0   & 0   & 0   & 1   & 0 \\
-			Pedestrian-Walk    (2):  42 & 0   & 0   & 0   & 1   & 0 \\
-			Pedestrian-Walk    (3):  84 & 0   & 0   & 0   & 1   & 0 \\
-			Pedestrian-FreeRun (1): 174 & 0   & 0   & 1   & 0   & 1 \\
-			Pedestrian-FreeRun (2): 163 & 1   & 0   & 0   & 0   & 0 \\
-			Pedestrian-FreeRun (3): 387 & 0   & 0   & 0   & 0   & 0 \\
+			Pedestrian-Walk    (1)&  82 & 0   & 0   & 0   & 1   & 0 \\
+			Pedestrian-Walk    (2)&  42 & 0   & 0   & 0   & 1   & 0 \\
+			Pedestrian-Walk    (3)&  84 & 0   & 0   & 0   & 1   & 0 \\
+			Pedestrian-FreeRun (1)& 174 & 0   & 0   & 1   & 0   & 1 \\
+			Pedestrian-FreeRun (2)& 163 & 1   & 0   & 0   & 0   & 0 \\
+			Pedestrian-FreeRun (3)& 387 & 0   & 0   & 0   & 0   & 0 \\
 			\hline
 			\end{tabular}
-			\caption{}
+			\caption{Urban environment results}
+			\label{table:ped}
 		\end{table}
+		
+		Our final domain of nature is also a domain with a huge variety of features similar to those of the urban environment where we chose hunting cheetahs and fishes in coral to run experiments on. The best performing color space on this domain is HSV. The Fish (1) sequence failed for all color-spaces because of the coral being camouflage for the type of fish, and the other fish sequences performed very well because of the distinctive color the fish has. The running cheetah was also camouflaged by its environment. But with the target model consisting of few features of the cheetah (black spots and some white fur), without the interference of shadows or lightspots it could be tracked using the HSV color space. See figure \ref{fig:RESULTS} for final results of the tracker. 
+		
 		\begin{table}[H]
 			\centering
-			\begin{tabular}{ | l | l | l | l | l | l |}
+			\begin{tabular}{ | l | l | l | l | l | l | l |}
 			\hline
-			                   & RGB & rgb & OCS & HSV & Hue \\
+			           & frames & RGB & rgb & OCS & HSV & Hue \\
 			\hline
-			Fish    (1): 314   & 0   & 0   & 0   & 0   & 0 \\
-			Fish    (2): 319   & 0   & 1   & 0   & 1   & 1 \\
-			Fish    (3): 322   & 1   & 1   & 1   & 1   & 1 \\
-			Cheatah (1): 387   & 0   & 0   & 0   & 1   & 1 \\
-			Cheatah (2):  91   & 0   & 0   & 0   & 1   & 0 \\
-			Cheatah (3): 105   & 0   & 0   & 0   & 1   & 1 \\
+			Fish    (1)& 314   & 0   & 0   & 0   & 0   & 0 \\
+			Fish    (2)& 319   & 0   & 1   & 0   & 1   & 1 \\
+			Fish    (3)& 322   & 1   & 1   & 1   & 1   & 1 \\
+			Cheetah (1)& 387   & 0   & 0   & 0   & 1   & 1 \\
+			Cheetah (2)&  91   & 0   & 0   & 0   & 1   & 0 \\
+			Cheetah (3)& 105   & 0   & 0   & 0   & 1   & 1 \\
 			\hline
 			\end{tabular}
-			\caption{}
+			\caption{Nature environment results}
+			\label{table:an}
 		\end{table}
 		\noindent
-
+		
+		\begin{figure}[H]
+			\begin{center}
+				\includegraphics[width=6cm]{img/res_animal2_hsv.eps} 
+				\includegraphics[width=6cm]{img/res_fish2_hue.eps}\\
+				\includegraphics[width=6cm]{img/res_freerun1_hue.eps}
+				\includegraphics[width=6cm]{img/res_walk1_hsv.eps}\\
+			\end{center}
+			\caption{
+				Final results from the mean-shift tracker. The green line describes the path the tracker has travelled on the screen, and in case of a static camera, it also describes the path of the object during the sequence.
+			}
+			\label{fig:RESULTS}
+		\end{figure}
 
 	\section{Conclusion}
-
+		Overall, the tracker performed well on the domains whenever the target object is distinctive with respect to the environment and if this is the case, it can handle occlusion very well. 
+		
+		
+		!!!!!!!!!!!!!TODO: can u fill this up plz
+		
+		
+		
 	\section{Future Work}
 		We have several suggestions for extending the tracker skeleton.
 
